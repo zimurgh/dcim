@@ -1,4 +1,4 @@
-package com.dcim.organization.firm;
+package com.dcim.site.rack;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,21 +8,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Stable firm identity across history revisions.
+ * Stable rack identity across history revisions.
  */
 @Entity
-@Table(name = "T_FIRM_IDENTITY")
-public class FirmIdentity {
+@Table(name = "T_RACK_IDENTITY")
+public class RackIdentity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "FIRM_ID", nullable = false)
-	private Long firmId;
+	@Column(name = "RACK_ID", nullable = false)
+	private Long rackId;
 
-	public FirmIdentity() {
+	public RackIdentity() {
 	}
 
-	public Long getFirmId() {
-		return firmId;
+	public Long getRackId() {
+		return rackId;
 	}
 }

@@ -19,7 +19,7 @@ public class DataCenterIdentity {
 	@Column(name = "DATA_CENTER_ID", nullable = false)
 	private Long dataCenterId;
 
-	protected DataCenterIdentity() {
+	public DataCenterIdentity() {
 	}
 
 	public Long getDataCenterId() {

@@ -1,4 +1,4 @@
-package com.dcim.organization.firm;
+package com.dcim.site.cage;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,21 +8,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Stable firm identity across history revisions.
+ * Stable cage identity across history revisions.
  */
 @Entity
-@Table(name = "T_FIRM_IDENTITY")
-public class FirmIdentity {
+@Table(name = "T_CAGE_IDENTITY")
+public class CageIdentity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "FIRM_ID", nullable = false)
-	private Long firmId;
+	@Column(name = "CAGE_ID", nullable = false)
+	private Long cageId;
 
-	public FirmIdentity() {
+	public CageIdentity() {
 	}
 
-	public Long getFirmId() {
-		return firmId;
+	public Long getCageId() {
+		return cageId;
 	}
 }

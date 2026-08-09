@@ -209,3 +209,379 @@ databaseChangeLog:
                   name: DATA_CENTER_ID
               - column:
                   name: VALID_TO
+  - changeSet:
+      id: 0005-cage-identity-and-history
+      author: dcim
+      comment: Stable cage identity + append-only cage history (FK to data center identity)
+      changes:
+        - createTable:
+            tableName: T_CAGE_IDENTITY
+            columns:
+              - column:
+                  name: CAGE_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: T_CAGE_HISTORY
+            columns:
+              - column:
+                  name: CAGE_HISTORY_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CAGE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DATA_CENTER_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CAGE_NAME
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_FROM
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_TO
+                  type: DATE
+              - column:
+                  name: APPLIED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_BY
+                  type: VARCHAR(50)
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_CAGE_HISTORY_IDENTITY
+            baseTableName: T_CAGE_HISTORY
+            baseColumnNames: CAGE_ID
+            referencedTableName: T_CAGE_IDENTITY
+            referencedColumnNames: CAGE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CAGE_HISTORY_DATA_CENTER
+            baseTableName: T_CAGE_HISTORY
+            baseColumnNames: DATA_CENTER_ID
+            referencedTableName: T_DATA_CENTER_IDENTITY
+            referencedColumnNames: DATA_CENTER_ID
+        - createIndex:
+            tableName: T_CAGE_HISTORY
+            indexName: IX_CAGE_HISTORY_CAGE_ID
+            columns:
+              - column:
+                  name: CAGE_ID
+        - createIndex:
+            tableName: T_CAGE_HISTORY
+            indexName: IX_CAGE_HISTORY_DATA_CENTER_ID
+            columns:
+              - column:
+                  name: DATA_CENTER_ID
+        - createIndex:
+            tableName: T_CAGE_HISTORY
+            indexName: IX_CAGE_HISTORY_CURRENT
+            columns:
+              - column:
+                  name: CAGE_ID
+              - column:
+                  name: VALID_TO
+  - changeSet:
+      id: 0006-rack-identity-and-history
+      author: dcim
+      comment: Stable rack identity + append-only rack history (FK to cage identity)
+      changes:
+        - createTable:
+            tableName: T_RACK_IDENTITY
+            columns:
+              - column:
+                  name: RACK_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: T_RACK_HISTORY
+            columns:
+              - column:
+                  name: RACK_HISTORY_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: RACK_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CAGE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RACK_NAME
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_FROM
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_TO
+                  type: DATE
+              - column:
+                  name: APPLIED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_BY
+                  type: VARCHAR(50)
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_HISTORY_IDENTITY
+            baseTableName: T_RACK_HISTORY
+            baseColumnNames: RACK_ID
+            referencedTableName: T_RACK_IDENTITY
+            referencedColumnNames: RACK_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_HISTORY_CAGE
+            baseTableName: T_RACK_HISTORY
+            baseColumnNames: CAGE_ID
+            referencedTableName: T_CAGE_IDENTITY
+            referencedColumnNames: CAGE_ID
+        - createIndex:
+            tableName: T_RACK_HISTORY
+            indexName: IX_RACK_HISTORY_RACK_ID
+            columns:
+              - column:
+                  name: RACK_ID
+        - createIndex:
+            tableName: T_RACK_HISTORY
+            indexName: IX_RACK_HISTORY_CAGE_ID
+            columns:
+              - column:
+                  name: CAGE_ID
+        - createIndex:
+            tableName: T_RACK_HISTORY
+            indexName: IX_RACK_HISTORY_CURRENT
+            columns:
+              - column:
+                  name: RACK_ID
+              - column:
+                  name: VALID_TO
+  - changeSet:
+      id: 0007-rack-device-identity-and-history
+      author: dcim
+      comment: Stable rack device identity + append-only history (FK to rack identity)
+      changes:
+        - createTable:
+            tableName: T_RACK_DEVICE_IDENTITY
+            columns:
+              - column:
+                  name: RACK_DEVICE_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: T_RACK_DEVICE_HISTORY
+            columns:
+              - column:
+                  name: RACK_DEVICE_HISTORY_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: RACK_DEVICE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RACK_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RACK_DEVICE_NAME
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_FROM
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_TO
+                  type: DATE
+              - column:
+                  name: APPLIED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_BY
+                  type: VARCHAR(50)
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_DEVICE_HISTORY_IDENTITY
+            baseTableName: T_RACK_DEVICE_HISTORY
+            baseColumnNames: RACK_DEVICE_ID
+            referencedTableName: T_RACK_DEVICE_IDENTITY
+            referencedColumnNames: RACK_DEVICE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_DEVICE_HISTORY_RACK
+            baseTableName: T_RACK_DEVICE_HISTORY
+            baseColumnNames: RACK_ID
+            referencedTableName: T_RACK_IDENTITY
+            referencedColumnNames: RACK_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_HISTORY
+            indexName: IX_RACK_DEVICE_HISTORY_RACK_DEVICE_ID
+            columns:
+              - column:
+                  name: RACK_DEVICE_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_HISTORY
+            indexName: IX_RACK_DEVICE_HISTORY_RACK_ID
+            columns:
+              - column:
+                  name: RACK_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_HISTORY
+            indexName: IX_RACK_DEVICE_HISTORY_CURRENT
+            columns:
+              - column:
+                  name: RACK_DEVICE_ID
+              - column:
+                  name: VALID_TO
+  - changeSet:
+      id: 0008-rack-device-port-identity-and-history
+      author: dcim
+      comment: Stable rack device port identity + append-only history (FK to rack device identity)
+      changes:
+        - createTable:
+            tableName: T_RACK_DEVICE_PORT_IDENTITY
+            columns:
+              - column:
+                  name: RACK_DEVICE_PORT_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: T_RACK_DEVICE_PORT_HISTORY
+            columns:
+              - column:
+                  name: RACK_DEVICE_PORT_HISTORY_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: RACK_DEVICE_PORT_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RACK_DEVICE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RACK_DEVICE_PORT_NAME
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_FROM
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VALID_TO
+                  type: DATE
+              - column:
+                  name: APPLIED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_BY
+                  type: VARCHAR(50)
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_DEVICE_PORT_HISTORY_IDENTITY
+            baseTableName: T_RACK_DEVICE_PORT_HISTORY
+            baseColumnNames: RACK_DEVICE_PORT_ID
+            referencedTableName: T_RACK_DEVICE_PORT_IDENTITY
+            referencedColumnNames: RACK_DEVICE_PORT_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_RACK_DEVICE_PORT_HISTORY_DEVICE
+            baseTableName: T_RACK_DEVICE_PORT_HISTORY
+            baseColumnNames: RACK_DEVICE_ID
+            referencedTableName: T_RACK_DEVICE_IDENTITY
+            referencedColumnNames: RACK_DEVICE_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_PORT_HISTORY
+            indexName: IX_RACK_DEVICE_PORT_HISTORY_PORT_ID
+            columns:
+              - column:
+                  name: RACK_DEVICE_PORT_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_PORT_HISTORY
+            indexName: IX_RACK_DEVICE_PORT_HISTORY_DEVICE_ID
+            columns:
+              - column:
+                  name: RACK_DEVICE_ID
+        - createIndex:
+            tableName: T_RACK_DEVICE_PORT_HISTORY
+            indexName: IX_RACK_DEVICE_PORT_HISTORY_CURRENT
+            columns:
+              - column:
+                  name: RACK_DEVICE_PORT_ID
+              - column:
+                  name: VALID_TO
