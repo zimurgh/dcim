@@ -1,0 +1,9 @@
+allowBuilds:
+  less: set this to true or false
+  nx: set this to true or false
+onlyBuiltDependencies:
+  - nx
+  - less
+  - esbuild
+  - '@parcel/watcher'
+  - lmdb

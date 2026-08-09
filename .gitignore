@@ -1,0 +1,34 @@
+.gradle/
+build/
+**/build/
+!**/src/**/build/
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+.pnpm-store/
+*.log
+
+# TLA+ / TLC
+states/
+*.out
+*.toolbox/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+**/ag-grid.license

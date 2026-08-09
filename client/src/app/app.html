@@ -1,0 +1,19 @@
+<main class="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-8">
+  <header class="space-y-2">
+    <p class="text-sm text-muted-foreground">DCIM</p>
+    <h1 class="text-3xl font-semibold tracking-tight">{{ title() }}</h1>
+    <p class="text-muted-foreground">
+      Angular 21 · AG Grid Enterprise · Spartan NG · Tailwind CSS v4
+    </p>
+  </header>
+
+  <section class="h-[28rem] overflow-hidden rounded-lg border border-border">
+    <ag-grid-angular
+      class="h-full w-full"
+      [theme]="theme"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+    />
+  </section>
+</main>

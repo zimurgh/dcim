@@ -1,0 +1,13 @@
+arguments=--init-script /home/michael/.config/Cursor/User/globalStorage/redhat.java/1.55.0/config_linux/org.eclipse.osgi/57/0/.cp/gradle/init/init.gradle --init-script /home/michael/.config/Cursor/User/globalStorage/redhat.java/1.55.0/config_linux/org.eclipse.osgi/57/0/.cp/gradle/protobuf/init.gradle --init-script /home/michael/.config/Cursor/User/globalStorage/redhat.java/1.55.0/config_linux/org.eclipse.osgi/57/0/.cp/gradle/kotlin/init.gradle --init-script /home/michael/.config/Cursor/User/globalStorage/redhat.java/1.55.0/config_linux/org.eclipse.osgi/57/0/.cp/gradle/groovy/init.gradle --init-script /home/michael/.config/Cursor/User/globalStorage/redhat.java/1.55.0/config_linux/org.eclipse.osgi/57/0/.cp/gradle/scala/init.gradle
+auto.sync=false
+build.scans.enabled=false
+connection.gradle.distribution=GRADLE_DISTRIBUTION(WRAPPER)
+connection.project.dir=
+eclipse.preferences.version=1
+gradle.user.home=
+java.home=/nix/store/1254iig4qqwznfv14wc5q2h3q5mkh7dd-openjdk-25.0.4+7/lib/openjdk
+jvm.arguments=
+offline.mode=false
+override.workspace.settings=true
+show.console.view=true
+show.executions.view=true
