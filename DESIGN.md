@@ -90,7 +90,123 @@ Intra-site dependency checks (e.g. terminate device ⇒ ports) use site queries 
 * **Batch-aware**: validators see sibling staged intents on the same Change Spec so terminate-parent + terminate-children in one batch can pass.
 * **Apply order** on a Change Spec: dependents first, then parents.
 * **Deferred**: field-level editability / RBAC (“can this user edit this field?”).
-* Common issue codes include `UNKNOWN_FIELD`, `MISSING_FIELD`, `NAME_CLASH`, `VALUE_CLASH`, `ACTIVE_CHILDREN`, `ACTIVE_REFERENCES`, `STALE_BASE`, `REFERENCE_NOT_FOUND`, `REFERENCE_NOT_ACTIVE`.
+* Common issue codes include `UNKNOWN_FIELD`, `MISSING_FIELD`, `INVALID_VALUE`, `NAME_CLASH`, `VALUE_CLASH`, `ACTIVE_CHILDREN`, `ACTIVE_REFERENCES`, `STALE_BASE`, `REFERENCE_NOT_FOUND`, `REFERENCE_NOT_ACTIVE`, `UNSUPPORTED_ACTION`, `MISSING_IDENTITY`, `HISTORY_NOT_FOUND`, `IDENTITY_MISMATCH`, `INVALID_PAYLOAD`.
+
+==== Common rules (every asset type)
+
+* **Payload shape** — only known fields for that type; no unknown keys
+* **Required fields** — present and non-blank / parseable on ADD (and when supplied on UPDATE)
+* **Enums / kinds** — parseable where applicable (e.g. `latencyType`, `speedType`, `rackDeviceTypeKind`, `exchangeType`, `marketSegmentType`)
+* **Supported action** — ADD / UPDATE / TERMINATE only
+* **Concurrency (UPDATE/TERMINATE)** — `assetIdentityId` + `baseHistoryId` required; history exists; belongs to identity; still current (`VALID_TO` is null)
+* **Reference liveness** — FK targets exist and current row is Active (not Terminated)
+* **Clash** — ADD/UPDATE must not collide with other current Active rows (scopes below)
+* **Terminate guards** — blocked by live children/references unless those identities are also TERMINATE in the same batch
+
+==== Site rules
+
+[cols="1,2,2"]
+|===
+| Asset | Clash (among current Active) | Terminate blocked by
+
+| Data Center
+| `dataCenterName` global
+| live Cages
+
+| Cage
+| `cageName` within Data Center
+| live Racks
+
+| Rack
+| `rackName` within Cage
+| live Rack Devices
+
+| Rack Device
+| `rackDeviceName` within Rack
+| live Ports
+
+| Rack Device Port
+| `rackDevicePortName` within Device
+| live Cables using the port
+
+| Rack Device Type
+| name global
+| live Devices referencing it
+
+| Rack Device Port Type
+| name global
+| live Ports referencing it
+|===
+
+Parent and type FKs (`dataCenterId`, `cageId`, `rackId`, `rackDeviceId`, type ids) must resolve to Active current rows.
+
+==== Connectivity rules
+
+[cols="1,2,2"]
+|===
+| Asset | Clash (among current Active) | Terminate blocked by
+
+| Cross Connect
+| unique `circuitId`
+| live Market Data Feeds, Documents, Cables
+
+| Market Data Feed
+| `marketDataFeedName` within Cross Connect
+| —
+
+| Document
+| `documentName` within Cross Connect
+| —
+
+| Cable
+| `portA ≠ portB`; each port on at most one Active cable
+| —
+
+| Latency
+| unique `latencyType` (LL \| ULL); unique name
+| live Cross Connects using it
+
+| Speed
+| unique `speedType` (1G \| 10G); unique name
+| live Cross Connects using it
+
+| Charge Type
+| unique name
+| live Cross Connect Types / Market Data Feed Types using it
+
+| Cross Connect Type
+| unique name
+| live Cross Connects using it
+
+| Market Data Feed Type
+| unique name
+| live Market Data Feeds using it
+|===
+
+Required Cross Connect refs (type, latency, speed, owner/billing firms) must be Active; optional market segment / provider firm must be Active when set. Same firm/type pattern on Market Data Feed. Cable ports (and optional Cross Connect) must be Active.
+
+==== Organization rules
+
+[cols="1,2,2"]
+|===
+| Asset | Clash (among current Active) | Terminate blocked by
+
+| Firm
+| `firmName` global
+| live Cross Connects / Market Data Feeds where firm is owner, billing, or provider
+
+| Exchange
+| `exchangeName` global
+| — (not referenced by connectivity today)
+
+| Market Segment
+| `marketSegmentName` global
+| live Cross Connects referencing it
+
+| User
+| `userName` global
+| — (not blocked by historical `appliedBy`)
+|===
 
 Connectivity shape:
 
