@@ -1,4 +1,4 @@
-package com.dcim.site.rackdevice;
+package com.dcim.workflow;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,18 +8,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "T_RACK_DEVICE_IDENTITY")
-public class RackDeviceIdentity {
+@Table(name = "T_CHANGE_IDENTITY")
+public class ChangeIdentity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "RACK_DEVICE_ID", nullable = false)
-	private Long rackDeviceId;
+	@Column(name = "CHANGE_ID", nullable = false)
+	private Long changeId;
 
-	public RackDeviceIdentity() {
+	public ChangeIdentity() {
 	}
 
-	public Long getRackDeviceId() {
-		return rackDeviceId;
+	public Long getChangeId() {
+		return changeId;
 	}
 }

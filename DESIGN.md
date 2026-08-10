@@ -2,120 +2,224 @@
 
 == Goals
 
-Re-design
-Staging changes is not a hassle
-    * Saving independent of validation
-    * 
-Validation issues are traceable and diagnosable
-
-Bulk updates
-
-Untracked - Not apart of a change spec action
-Modified - Is a patch, but not in a change spec yet. 
-Staging - A change spec with patches attached, that is not commited yet
-Pending Billing
-Commitlog - 
-
+* Re-design change / inventory workflow so staging is not a hassle
+** Saving independent of validation
+** Validation issues are traceable and diagnosable
+* Bulk updates
+* Correct inaccurate info / typos as late as possible (until apply)
+* Append-only asset history with stable identities
+* Change Specs for owner-firm connectivity / billing work, with CHREC traceability
 
 == Project Layout
 
-client/
-server/
-
+----
+client/     Angular app
+server/     Spring Boot Modulith
+spec/       TLA+ models
+----
 
 == Motivation
 
-=== Change Spec inflexibilty
+=== Change Spec inflexibility
 
-1) Migrations don't really work - A switch migration was originally intended to allow for updating aspects of a cross connect that has billing impact or the cross connect name (latency, speed, patch panel, mdf patch number). In practice, switch migrations involve changing way more than just a couple fields relevant to billing or unique naming. For example, the switch changes and so do many other details - it's practically a new cross connect. 
+1) Migrations don't really work — A switch migration was originally intended to allow updating aspects of a cross connect that has billing impact or the cross connect name (latency, speed, patch panel, mdf patch number). In practice, switch migrations involve changing way more than a couple billing/naming fields — practically a new cross connect.
 
-2) Can't ammend change specs - Often corrections/mistakes make it through the stages of a change spec lifetime during which it can be modified. Once the mistake or correction is realized, it's too late and the change spec is already commited.
+2) Can't amend change specs — Corrections/mistakes often surface after the window where a change spec can still be modified; once committed it was too late.
 
-3) Firm Transfers don't really work - When a firm gets updated, the change doesn't propagate in any way to cross connects and services that were owned/billed by/for that firm. Either firms need a more stable id or id changes need to be propagated automatically as part of the process of changing the firm.
+3) Firm transfers don't really work — When a firm is updated, the change does not propagate to cross connects and services owned/billed by that firm. Firms need a stable id (and transfers need an explicit change process).
 
 === Inability to efficiently work with data
 
-1) No way to perform bulk updates properly - If 10 cross connects need their extranet switches changed, they're currently required to go into each record and update the switch info.
+1) No way to perform bulk updates properly — e.g. 10 cross connects needing the same extranet switch change requires editing each record.
 
-2) Copy/Paste doesn't work in a majority of places in UI
+2) Copy/paste doesn't work in a majority of places in the UI.
 
-== Design
+== Decided design
 
-**Q: Should it be possible to modify history without change specs?**
-A: No, so that there's only one editor in the app. Simpler, consistent mental model.
-To control complexity, common editing & validation code can be shared.
-For asset-specific code, editing/validation logic must be kept separate from workflow logic
-Asset-specific editing/validation logic should live in domain-specific modules.
-Workflow logic should be data-driven by a workflow lookup table that's part of the dcim's schema.
+=== Asset / ledger model
 
-**Q: When an asset record is sent to client, what should be sent?**
-Options:
-* Send the db entity as is, references and all.
-    * Simple, but also slow
-    * Simple because the entities bring a chunk of the schema to the code, ad-hoc queries can be done in the field.
-    * Complex because everything ends up aware of the schema. 
-* Send a custom DTO that is a shallow representation of the stored entity.
-    * Have to write a separate DTO / view for each entity
-    * On the other hand, a DTO / view may not be needed for every entity
-    * Extra layer if indirection allows for isolating changes at a api boundary
-    * Will 
-* Send a compressed custom DTO, with just IDs into lookup tables that are also send.
-    * Easy to do if schema is organized consistently around actual ids as primary keys.
-    *  
-A: Send a custom DTO via a view. Keep DTO shallow and encode both names and ids for things.
+Every durable asset has:
 
-**Q: When an asset record is sent to the server, what should be sent?**
-A: An asset id, a asset history id, a json diff of changes.  
+* `T_*_IDENTITY` — stable id; target of FKs across revisions
+* `T_*_HISTORY` — append-only revisions
+* Shared audit columns (`AuditHistory`): `VALID_FROM` / `VALID_TO`, `APPLIED_AT` / `APPLIED_BY`, `ACTION`, `STATUS`
+* Current row: `VALID_TO IS NULL`
 
-Every asset is stored in the database as an append-only ledger.
+History is never rewritten. Corrections after apply are new changes.
 
+Site spatial tree (Modulith module `site`, internal packages):
 
+----
+DataCenter → Cage → Rack → RackDevice → RackDevicePort
+----
 
-Change Spec editing process goes as follows:
+Each child FKs its parent's **identity** id.
 
-User can create one or more a change spec item 
-change spec items exist as json blobs annotated by their asset type and the asset id they're targeting. They can be optionally overlayed over assets their targeting.
-User can freely move change spec items around between change specs.
+Organization holds parties (e.g. Firm) with the same identity + history pattern.
 
+=== Modulith modules
 
-add/update/terminate
+[cols="1,2"]
+|===
+| Module | Role
 
+| `asset`
+| Shared history base types / future validate–apply ports
 
+| `organization`
+| Firms and similar commercial parties
 
-Change Spec
+| `site`
+| Whole spatial inventory tree (not one Modulith module per level)
 
-Change Spec Item
+| `workflow`
+| Changes, Change Specs, CHRECs, promotion, apply orchestration
 
-Data Center
+| `connectivity` (later)
+| Cross-connects / market data feeds between firms and ports
+|===
 
-Cage
+Workflow orchestrates; `organization` / `site` implement type-specific validate/apply.
+Intra-site dependency checks (e.g. terminate device ⇒ ports) use site queries plus change-spec/batch context — not async events for the guard itself.
 
-Rack
+=== When a Change Spec is required
 
-Device
-Device Type
+* **Required** if work impacts the **owner** firm's **billing** or **connectivity**
+* **Not required** if transparent to both
+* Change Spec is scoped to the **owner** firm
 
-Port
-Port Type
+=== Change lifecycle (three stages, three tables)
 
-Cross Connect
-Cross Connect Type
+Universal stages: *Untracked → Staged → Committed* (promoted between tables).
 
-Market Data Feed
-Market Data Feed Type
+Stable id: `T_CHANGE_IDENTITY` (`CHANGE_ID` never changes across promotions).
 
+[cols="1,2"]
+|===
+| Table | Meaning
+
+| `T_CHANGE_UNTRACKED`
+| Early capture; JSON shape unknown / unconstrained; no known asset type
+
+| `T_CHANGE_STAGED`
+| Known `ASSET_TYPE` + schema-shaped payload; validatable; may belong to a Change Spec
+
+| `T_CHANGE_COMMITTED`
+| Applied; typed; ledger links via link table
+|===
+
+Payload bytes live separately in `T_CHANGE_PAYLOAD` (stage tables reference `CHANGE_PAYLOAD_ID`). Prefer a **new payload row on amend**.
+
+Committed ↔ history association uses a **link table** (many asset types coming):
+
+----
+T_CHANGE_COMMITTED_HISTORY
+  CHANGE_ID
+  ASSET_TYPE
+  HISTORY_ID
+  ROLE            -- e.g. CREATED | CLOSED_PRIOR
+----
+
+Invariant: at most one open row in Untracked *or* Staged per `CHANGE_ID`; after apply, Committed (+ links) exists and open stage rows are removed.
+
+=== Stage → asset status (per action)
+
+Statuses are derived from action × stage (data-driven workflow lookup), e.g. Add:
+
+[cols="1,1"]
+|===
+| Stage | Status
+
+| Untracked | Draft
+| Staged | Pending Add
+| Committed | Active
+|===
+
+Same pattern for Update / Terminate (e.g. Pending Update, Pending Terminate → Active / Terminated).
+
+Before commit, status describes the **change** (UI overlay). At commit, the committed status is written on the **history** row.
+
+=== Change Specs and CHRECs
+
+* `T_CHANGE_SPEC` — owner firm, process status, metadata
+* Membership — spec ↔ `CHANGE_ID` (Staged changes for the billing path)
+* `T_CHREC` — Jira issue records
+* `T_CHANGE_SPEC_CHREC` — many-to-many
+
+Rules:
+
+* Changes may be **added to / removed from** a Change Spec until the spec is **Applied**
+* **0** CHRECs allowed in Draft
+* **≥1** CHREC required to enter **Pending Billing** and any later process step
+* Post-apply amend is always a **new** Change (and a new/updated Change Spec when billing/connectivity rules require one)
+
+=== Process vs official truth
+
+Spec statuses (Draft → Pending Billing → … → **Applied**) are **process gates**, not a second inventory.
+
+* No long-lived “frozen but uncommitted” inventory that looks official in the UI
+* Amend allowed until **apply** (including under Pending Billing)
+* Optional commercial checkpoint at Pending Billing = snapshot/export of **spec contents**; amend may require re-approval / re-export
+* **Applied to append-only history = official** for the system
+
+UI: ledger = current truth; open changes shown as an explicit pending overlay.
+
+=== Apply and multi-asset work
+
+* One Change = one primary asset intent (action + payload)
+* Apply typically closes the prior history row and inserts a new one → multiple `T_CHANGE_COMMITTED_HISTORY` rows
+* Multi-asset work (e.g. terminate RackDevice + its ports) = **multiple Changes** in one spec/batch
+* Validation: inventory answers “what is still live?”; workflow supplies “what is in this batch?”; validators intersect them (structured, per-item errors)
+* Apply order: dependents first, then parent
+
+=== Formal methods
+
+Focus TLA+ / property tests on: linear history per identity, apply-only ledger advances, optimistic concurrency (`baseHistoryId`), promotion invariants, Change Spec / CHREC gates, dependency coverage — not full column schemas.
+
+=== Explicitly avoided
+
+* Exclusive per-asset-type FK columns on `T_CHANGE_COMMITTED` (use link table)
+* JSON stored inside stage tables (use `T_CHANGE_PAYLOAD`)
+* Global DAG of all edits (linear history per identity; optional local depends-on only if needed)
+* Dual “visible working set that is almost official” before apply
+
+== Design Q&A
+
+**Q: Should it be possible to modify history without going through Changes?**
+A: No. The only way to advance the ledger is apply (commit) of Changes. That keeps a single apply path. Not every Change must sit on a Change Spec — only those that affect owner-firm billing or connectivity.
+
+**Q: Should asset-specific validation live in workflow?**
+A: No. Common editing/validation mechanics can be shared; asset-specific rules live in domain modules (`organization`, `site`, …). Workflow is data-driven (lookup table in schema) for stage→status and process gates.
+
+**Q: When an asset record is sent to the client, what should be sent?**
+A: A custom shallow DTO via a view — encode both names and ids for references.
+
+**Q: When an asset change is sent to the server, what should be sent?**
+A: Enough to identify the target and intent: stable asset id (if any), base history id (optimistic concurrency), and a JSON payload / diff. Untracked may omit typed asset shape until promotion to Staged.
+
+== Domain catalog (assets / products)
+
+* Firm
+* Data Center, Cage, Rack, Rack Device, Rack Device Port
+* Device Type, Port Type (as needed)
+* Cross Connect, Cross Connect Type
+* Market Data Feed, Market Data Feed Type
 
 == Tech Stack
 
 === Client
-Angular 21
-ag-grid 36 Enterprise
-Spartan NG
-Tailwind CSS v4
+
+* Angular 21
+* ag-grid 36 Enterprise
+* Spartan NG
+* Tailwind CSS v4
+* fast-check
 
 === Server
-Database: Mariadb
-Spring Boot 4
-Java 25
-Liquibase
 
+* MariaDB
+* Spring Boot 4
+* Java 25
+* Liquibase
+* Spring Modulith
+* jqwik

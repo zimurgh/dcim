@@ -3,9 +3,6 @@ package com.dcim.site.rackdeviceport;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * Shallow rack device port DTO for API responses (current history row).
- */
 public record RackDevicePortDto(
 		Long rackDevicePortId,
 		Long rackDevicePortHistoryId,

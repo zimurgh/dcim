@@ -7,9 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/**
- * Stable rack device port identity across history revisions.
- */
 @Entity
 @Table(name = "T_RACK_DEVICE_PORT_IDENTITY")
 public class RackDevicePortIdentity {

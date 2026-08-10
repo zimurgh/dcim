@@ -585,3 +585,418 @@ databaseChangeLog:
                   name: RACK_DEVICE_PORT_ID
               - column:
                   name: VALID_TO
+  - changeSet:
+      id: 0009-workflow-changes-and-specs
+      author: dcim
+      comment: Change identity/payload/stages, change specs, CHRECs, action status lookup
+      changes:
+        - createTable:
+            tableName: T_CHANGE_IDENTITY
+            columns:
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+        - createTable:
+            tableName: T_CHANGE_PAYLOAD
+            columns:
+              - column:
+                  name: CHANGE_PAYLOAD_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: BODY
+                  type: CLOB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_PAYLOAD_IDENTITY
+            baseTableName: T_CHANGE_PAYLOAD
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_IDENTITY
+            referencedColumnNames: CHANGE_ID
+        - createIndex:
+            tableName: T_CHANGE_PAYLOAD
+            indexName: IX_CHANGE_PAYLOAD_CHANGE_ID
+            columns:
+              - column:
+                  name: CHANGE_ID
+        - createTable:
+            tableName: T_CHANGE_UNTRACKED
+            columns:
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CHANGE_PAYLOAD_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_BY
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_UNTRACKED_IDENTITY
+            baseTableName: T_CHANGE_UNTRACKED
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_IDENTITY
+            referencedColumnNames: CHANGE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_UNTRACKED_PAYLOAD
+            baseTableName: T_CHANGE_UNTRACKED
+            baseColumnNames: CHANGE_PAYLOAD_ID
+            referencedTableName: T_CHANGE_PAYLOAD
+            referencedColumnNames: CHANGE_PAYLOAD_ID
+        - createTable:
+            tableName: T_CHANGE_STAGED
+            columns:
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CHANGE_PAYLOAD_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ASSET_TYPE
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ASSET_IDENTITY_ID
+                  type: BIGINT
+              - column:
+                  name: BASE_HISTORY_ID
+                  type: BIGINT
+              - column:
+                  name: STAGED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STAGED_BY
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_STAGED_IDENTITY
+            baseTableName: T_CHANGE_STAGED
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_IDENTITY
+            referencedColumnNames: CHANGE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_STAGED_PAYLOAD
+            baseTableName: T_CHANGE_STAGED
+            baseColumnNames: CHANGE_PAYLOAD_ID
+            referencedTableName: T_CHANGE_PAYLOAD
+            referencedColumnNames: CHANGE_PAYLOAD_ID
+        - createTable:
+            tableName: T_CHANGE_COMMITTED
+            columns:
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CHANGE_PAYLOAD_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ASSET_TYPE
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: APPLIED_BY
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_COMMITTED_IDENTITY
+            baseTableName: T_CHANGE_COMMITTED
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_IDENTITY
+            referencedColumnNames: CHANGE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_COMMITTED_PAYLOAD
+            baseTableName: T_CHANGE_COMMITTED
+            baseColumnNames: CHANGE_PAYLOAD_ID
+            referencedTableName: T_CHANGE_PAYLOAD
+            referencedColumnNames: CHANGE_PAYLOAD_ID
+        - createTable:
+            tableName: T_CHANGE_COMMITTED_HISTORY
+            columns:
+              - column:
+                  name: CHANGE_COMMITTED_HISTORY_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ASSET_TYPE
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: HISTORY_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ROLE
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_COMMITTED_HISTORY_CHANGE
+            baseTableName: T_CHANGE_COMMITTED_HISTORY
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_COMMITTED
+            referencedColumnNames: CHANGE_ID
+        - createIndex:
+            tableName: T_CHANGE_COMMITTED_HISTORY
+            indexName: IX_CHANGE_COMMITTED_HISTORY_CHANGE_ID
+            columns:
+              - column:
+                  name: CHANGE_ID
+        - createTable:
+            tableName: T_CHANGE_SPEC
+            columns:
+              - column:
+                  name: CHANGE_SPEC_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: OWNER_FIRM_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: VARCHAR(100)
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_BY
+                  type: VARCHAR(50)
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_SPEC_OWNER_FIRM
+            baseTableName: T_CHANGE_SPEC
+            baseColumnNames: OWNER_FIRM_ID
+            referencedTableName: T_FIRM_IDENTITY
+            referencedColumnNames: FIRM_ID
+        - createTable:
+            tableName: T_CHANGE_SPEC_ITEM
+            columns:
+              - column:
+                  name: CHANGE_SPEC_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CHANGE_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+            constraints:
+              - primaryKey:
+                  primaryKeyName: PK_CHANGE_SPEC_ITEM
+                  columnNames: CHANGE_SPEC_ID, CHANGE_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_SPEC_ITEM_SPEC
+            baseTableName: T_CHANGE_SPEC_ITEM
+            baseColumnNames: CHANGE_SPEC_ID
+            referencedTableName: T_CHANGE_SPEC
+            referencedColumnNames: CHANGE_SPEC_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_SPEC_ITEM_CHANGE
+            baseTableName: T_CHANGE_SPEC_ITEM
+            baseColumnNames: CHANGE_ID
+            referencedTableName: T_CHANGE_IDENTITY
+            referencedColumnNames: CHANGE_ID
+        - createTable:
+            tableName: T_CHREC
+            columns:
+              - column:
+                  name: CHREC_ID
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: JIRA_KEY
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: TITLE
+                  type: VARCHAR(200)
+              - column:
+                  name: URL
+                  type: VARCHAR(500)
+        - createTable:
+            tableName: T_CHANGE_SPEC_CHREC
+            columns:
+              - column:
+                  name: CHANGE_SPEC_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CHREC_ID
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+            constraints:
+              - primaryKey:
+                  primaryKeyName: PK_CHANGE_SPEC_CHREC
+                  columnNames: CHANGE_SPEC_ID, CHREC_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_SPEC_CHREC_SPEC
+            baseTableName: T_CHANGE_SPEC_CHREC
+            baseColumnNames: CHANGE_SPEC_ID
+            referencedTableName: T_CHANGE_SPEC
+            referencedColumnNames: CHANGE_SPEC_ID
+        - addForeignKeyConstraint:
+            constraintName: FK_CHANGE_SPEC_CHREC_CHREC
+            baseTableName: T_CHANGE_SPEC_CHREC
+            baseColumnNames: CHREC_ID
+            referencedTableName: T_CHREC
+            referencedColumnNames: CHREC_ID
+        - createTable:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column:
+                  name: ACTION
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STAGE
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+            constraints:
+              - primaryKey:
+                  primaryKeyName: PK_CHANGE_ACTION_STATUS
+                  columnNames: ACTION, STAGE
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: ADD }
+              - column: { name: STAGE, value: UNTRACKED }
+              - column: { name: STATUS, value: Draft }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: ADD }
+              - column: { name: STAGE, value: STAGED }
+              - column: { name: STATUS, value: Pending Add }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: ADD }
+              - column: { name: STAGE, value: COMMITTED }
+              - column: { name: STATUS, value: Active }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: UPDATE }
+              - column: { name: STAGE, value: UNTRACKED }
+              - column: { name: STATUS, value: Draft }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: UPDATE }
+              - column: { name: STAGE, value: STAGED }
+              - column: { name: STATUS, value: Pending Update }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: UPDATE }
+              - column: { name: STAGE, value: COMMITTED }
+              - column: { name: STATUS, value: Active }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: TERMINATE }
+              - column: { name: STAGE, value: UNTRACKED }
+              - column: { name: STATUS, value: Draft }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: TERMINATE }
+              - column: { name: STAGE, value: STAGED }
+              - column: { name: STATUS, value: Pending Terminate }
+        - insert:
+            tableName: T_CHANGE_ACTION_STATUS
+            columns:
+              - column: { name: ACTION, value: TERMINATE }
+              - column: { name: STAGE, value: COMMITTED }
+              - column: { name: STATUS, value: Terminated }

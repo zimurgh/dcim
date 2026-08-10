@@ -75,4 +75,17 @@ public abstract class AuditHistory {
 	public boolean isCurrent() {
 		return validTo == null;
 	}
+
+	/**
+	 * Closes this history row as of {@code validTo}. Append-only: never clears a prior close.
+	 */
+	public void close(LocalDate validTo) {
+		if (validTo == null) {
+			throw new IllegalArgumentException("validTo is required to close history");
+		}
+		if (this.validTo != null) {
+			throw new IllegalStateException("History row is already closed");
+		}
+		this.validTo = validTo;
+	}
 }

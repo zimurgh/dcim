@@ -7,9 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/**
- * Stable data center identity across history revisions.
- */
 @Entity
 @Table(name = "T_DATA_CENTER_IDENTITY")
 public class DataCenterIdentity {
