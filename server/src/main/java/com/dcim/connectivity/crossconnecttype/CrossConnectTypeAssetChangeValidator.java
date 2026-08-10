@@ -1,13 +1,11 @@
 package com.dcim.connectivity.crossconnecttype;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.dcim.asset.AssetChangeValidator;
+import com.dcim.asset.AbstractAssetChangeValidator;
 import com.dcim.asset.AssetValidateCommand;
-import com.dcim.asset.AuditHistory;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.asset.PayloadValidation;
 import com.dcim.asset.ValidationCodes;
@@ -23,68 +21,35 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
-class CrossConnectTypeAssetChangeValidator implements AssetChangeValidator {
-
-	private static final Set<String> ACTIONS = Set.of("ADD", "UPDATE", "TERMINATE");
-	private static final Set<String> ALLOWED_FIELDS = Set.of("crossConnectTypeName", "chargeTypeId");
+class CrossConnectTypeAssetChangeValidator extends AbstractAssetChangeValidator<CrossConnectTypeHistory> {
 
 	private final CrossConnectTypeHistoryRepository history;
 	private final ChargeTypeService chargeTypes;
 	private final CrossConnectService crossConnects;
-	private final JsonPayloads payloads;
 
 	CrossConnectTypeAssetChangeValidator(
 			CrossConnectTypeHistoryRepository history,
 			ChargeTypeService chargeTypes,
 			CrossConnectService crossConnects,
 			JsonPayloads payloads) {
+		super(
+				"CROSS_CONNECT_TYPE",
+				"cross connect type",
+				Set.of("crossConnectTypeName", "chargeTypeId"),
+				history,
+				CrossConnectTypeHistory::getCrossConnectTypeId,
+				payloads);
 		this.history = history;
 		this.chargeTypes = chargeTypes;
 		this.crossConnects = crossConnects;
-		this.payloads = payloads;
 	}
 
 	@Override
-	public boolean supports(String assetType) {
-		return "CROSS_CONNECT_TYPE".equals(assetType);
-	}
-
-	@Override
-	public List<ValidationIssue> validate(AssetValidateCommand command, ValidationContext context) {
-		List<ValidationIssue> issues = new ArrayList<>();
-		if (!ACTIONS.contains(command.action())) {
-			issues.add(new ValidationIssue(
-					ValidationCodes.UNSUPPORTED_ACTION,
-					"Unsupported cross connect type action: " + command.action()));
-			return issues;
-		}
-		JsonNode body = readBody(command, issues);
-		if (body == null) {
-			return issues;
-		}
-		issues.addAll(PayloadValidation.unknownFields(body, ALLOWED_FIELDS));
-
-		boolean isAdd = "ADD".equals(command.action());
-		boolean isTerminate = "TERMINATE".equals(command.action());
-
-		CrossConnectTypeHistory base = null;
-		if (!isAdd) {
-			base = PayloadValidation.validateConcurrency(
-					command.assetIdentityId(),
-					command.baseHistoryId(),
-					history::findById,
-					CrossConnectTypeHistory::getCrossConnectTypeId,
-					AuditHistory::isCurrent,
-					issues);
-		}
-
-		if (isTerminate) {
-			if (base != null) {
-				validateTerminateGuard(base, context, issues);
-			}
-			return issues;
-		}
-
+	protected void validateAddOrUpdate(
+			AssetValidateCommand command,
+			JsonNode body,
+			CrossConnectTypeHistory prior,
+			List<ValidationIssue> issues) {
 		PayloadValidation.requireText(body, "crossConnectTypeName", issues);
 		String name = PayloadValidation.textOrNull(body, "crossConnectTypeName");
 		if (name != null) {
@@ -98,17 +63,22 @@ class CrossConnectTypeAssetChangeValidator implements AssetChangeValidator {
 				PayloadValidation.requireActiveReference("chargeTypeId", chargeTypeId, status, issues);
 			}
 		}
-
-		return issues;
 	}
 
-	private JsonNode readBody(AssetValidateCommand command, List<ValidationIssue> issues) {
-		try {
-			return payloads.read(command.payloadJson());
-		}
-		catch (RuntimeException ex) {
-			issues.add(new ValidationIssue(ValidationCodes.INVALID_PAYLOAD, ex.getMessage()));
-			return null;
+	@Override
+	protected void validateTerminate(
+			CrossConnectTypeHistory prior, ValidationContext context, List<ValidationIssue> issues) {
+		List<Long> blocking = crossConnects.listCurrentByCrossConnectTypeId(prior.getCrossConnectTypeId()).stream()
+				.filter(dto -> PayloadValidation.isActiveStatus(dto.status()))
+				.map(CrossConnectDto::crossConnectId)
+				.filter(id -> !context.coversTerminate("CROSS_CONNECT", id))
+				.toList();
+		if (!blocking.isEmpty()) {
+			issues.add(new ValidationIssue(
+					ValidationCodes.ACTIVE_REFERENCES,
+					null,
+					"Cross connect type is referenced by active cross connects",
+					blocking));
 		}
 	}
 
@@ -125,22 +95,6 @@ class CrossConnectTypeAssetChangeValidator implements AssetChangeValidator {
 					"crossConnectTypeName",
 					"crossConnectTypeName already used by an active cross connect type",
 					clashes));
-		}
-	}
-
-	private void validateTerminateGuard(
-			CrossConnectTypeHistory base, ValidationContext context, List<ValidationIssue> issues) {
-		List<Long> blocking = crossConnects.listCurrentByCrossConnectTypeId(base.getCrossConnectTypeId()).stream()
-				.filter(dto -> PayloadValidation.isActiveStatus(dto.status()))
-				.map(CrossConnectDto::crossConnectId)
-				.filter(id -> !context.coversTerminate("CROSS_CONNECT", id))
-				.toList();
-		if (!blocking.isEmpty()) {
-			issues.add(new ValidationIssue(
-					ValidationCodes.ACTIVE_REFERENCES,
-					null,
-					"Cross connect type is referenced by active cross connects",
-					blocking));
 		}
 	}
 }

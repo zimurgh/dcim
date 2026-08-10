@@ -91,6 +91,7 @@ Intra-site dependency checks (e.g. terminate device ⇒ ports) use site queries 
 * **Apply order** on a Change Spec: dependents first, then parents.
 * **Deferred**: field-level editability / RBAC (“can this user edit this field?”).
 * Common issue codes include `UNKNOWN_FIELD`, `MISSING_FIELD`, `INVALID_VALUE`, `NAME_CLASH`, `VALUE_CLASH`, `ACTIVE_CHILDREN`, `ACTIVE_REFERENCES`, `STALE_BASE`, `REFERENCE_NOT_FOUND`, `REFERENCE_NOT_ACTIVE`, `UNSUPPORTED_ACTION`, `MISSING_IDENTITY`, `HISTORY_NOT_FOUND`, `IDENTITY_MISMATCH`, `INVALID_PAYLOAD`.
+* **Lifecycle templates** (`asset` module): domain appliers extend `AbstractAssetChangeApplier` (action switch, concurrency, history links — subclasses only build history rows); validators extend `AbstractAssetChangeValidator` (action dispatch, unknown fields, concurrency, empty TERMINATE payload — subclasses supply field/clash rules and terminate guards). Shared helpers also live in `AssetApplyLifecycle` / `PayloadValidation`.
 
 ==== Common rules (every asset type)
 

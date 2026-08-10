@@ -1,13 +1,8 @@
 package com.dcim.connectivity.crossconnect;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dcim.asset.AbstractAssetChangeApplier;
 import com.dcim.asset.AssetApplyCommand;
 import com.dcim.asset.AssetApplyException;
-import com.dcim.asset.AssetApplyResult;
-import com.dcim.asset.AssetChangeApplier;
-import com.dcim.asset.AssetHistoryLink;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.connectivity.crossconnecttype.CrossConnectTypeIdentity;
 import com.dcim.connectivity.crossconnecttype.CrossConnectTypeIdentityRepository;
@@ -25,16 +20,13 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
-class CrossConnectAssetChangeApplier implements AssetChangeApplier {
+class CrossConnectAssetChangeApplier extends AbstractAssetChangeApplier<CrossConnectIdentity, CrossConnectHistory> {
 
-	private final CrossConnectIdentityRepository identities;
-	private final CrossConnectHistoryRepository history;
 	private final CrossConnectTypeIdentityRepository crossConnectTypes;
 	private final LatencyIdentityRepository latencies;
 	private final SpeedIdentityRepository speeds;
 	private final MarketSegmentIdentityRepository marketSegments;
 	private final FirmIdentityRepository firms;
-	private final JsonPayloads payloads;
 
 	CrossConnectAssetChangeApplier(
 			CrossConnectIdentityRepository identities,
@@ -45,35 +37,25 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 			MarketSegmentIdentityRepository marketSegments,
 			FirmIdentityRepository firms,
 			JsonPayloads payloads) {
-		this.identities = identities;
-		this.history = history;
+		super(
+				"CROSS_CONNECT",
+				"cross connect",
+				identities,
+				history,
+				payloads,
+				CrossConnectIdentity::new,
+				CrossConnectIdentity::getCrossConnectId,
+				CrossConnectHistory::getCrossConnectId,
+				CrossConnectHistory::getCrossConnectHistoryId);
 		this.crossConnectTypes = crossConnectTypes;
 		this.latencies = latencies;
 		this.speeds = speeds;
 		this.marketSegments = marketSegments;
 		this.firms = firms;
-		this.payloads = payloads;
 	}
 
 	@Override
-	public boolean supports(String assetType) {
-		return "CROSS_CONNECT".equals(assetType);
-	}
-
-	@Override
-	public AssetApplyResult apply(AssetApplyCommand command) {
-		return switch (command.action()) {
-			case "ADD" -> add(command);
-			case "UPDATE" -> update(command);
-			case "TERMINATE" -> terminate(command);
-			default -> throw new AssetApplyException("Unsupported cross connect action: " + command.action());
-		};
-	}
-
-	private AssetApplyResult add(AssetApplyCommand command) {
-		JsonNode body = payloads.read(command.payloadJson());
-		String name = JsonPayloads.requiredText(body, "crossConnectName");
-		String circuitId = JsonPayloads.requiredText(body, "circuitId");
+	protected CrossConnectHistory createAdd(CrossConnectIdentity identity, JsonNode body, AssetApplyCommand command) {
 		CrossConnectTypeIdentity type = requireType(JsonPayloads.requiredLong(body, "crossConnectTypeId"));
 		LatencyIdentity latency = requireLatency(JsonPayloads.requiredLong(body, "latencyId"));
 		SpeedIdentity speed = requireSpeed(JsonPayloads.requiredLong(body, "speedId"));
@@ -82,11 +64,10 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 		FirmIdentity owner = requireFirm(JsonPayloads.requiredLong(body, "ownerFirmId"), "owner");
 		FirmIdentity billing = requireFirm(JsonPayloads.requiredLong(body, "billingFirmId"), "billing");
 		FirmIdentity provider = optionalFirm(JsonPayloads.longOrNull(body, "providerFirmId"), "provider");
-		CrossConnectIdentity identity = identities.saveAndFlush(new CrossConnectIdentity());
-		CrossConnectHistory created = history.saveAndFlush(new CrossConnectHistory(
+		return new CrossConnectHistory(
 				identity,
-				name,
-				circuitId,
+				JsonPayloads.requiredText(body, "crossConnectName"),
+				JsonPayloads.requiredText(body, "circuitId"),
 				type,
 				latency,
 				speed,
@@ -99,16 +80,12 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return new AssetApplyResult(
-				identity.getCrossConnectId(),
-				List.of(new AssetHistoryLink(created.getCrossConnectHistoryId(), AssetHistoryLink.ROLE_CREATED)));
+				command.committedStatus());
 	}
 
-	private AssetApplyResult update(AssetApplyCommand command) {
-		CrossConnectHistory prior = requireCurrentBase(command);
-		JsonNode body = payloads.read(command.payloadJson());
-		String name = JsonPayloads.requiredText(body, "crossConnectName");
+	@Override
+	protected CrossConnectHistory createUpdate(
+			CrossConnectHistory prior, JsonNode body, AssetApplyCommand command) {
 		String circuitId = body.hasNonNull("circuitId")
 				? JsonPayloads.requiredText(body, "circuitId")
 				: prior.getCircuitId();
@@ -133,10 +110,9 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 		FirmIdentity provider = body.has("providerFirmId")
 				? optionalFirm(JsonPayloads.longOrNull(body, "providerFirmId"), "provider")
 				: prior.getProviderFirmIdentity();
-		prior.close(command.validOn());
-		CrossConnectHistory created = history.saveAndFlush(new CrossConnectHistory(
+		return new CrossConnectHistory(
 				prior.getCrossConnectIdentity(),
-				name,
+				JsonPayloads.requiredText(body, "crossConnectName"),
 				circuitId,
 				type,
 				latency,
@@ -150,14 +126,12 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return result(prior, created);
+				command.committedStatus());
 	}
 
-	private AssetApplyResult terminate(AssetApplyCommand command) {
-		CrossConnectHistory prior = requireCurrentBase(command);
-		prior.close(command.validOn());
-		CrossConnectHistory created = history.saveAndFlush(new CrossConnectHistory(
+	@Override
+	protected CrossConnectHistory createTerminate(CrossConnectHistory prior, AssetApplyCommand command) {
+		return new CrossConnectHistory(
 				prior.getCrossConnectIdentity(),
 				prior.getCrossConnectName(),
 				prior.getCircuitId(),
@@ -173,8 +147,7 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return result(prior, created);
+				command.committedStatus());
 	}
 
 	private CrossConnectTypeIdentity requireType(Long crossConnectTypeId) {
@@ -210,30 +183,5 @@ class CrossConnectAssetChangeApplier implements AssetChangeApplier {
 			return null;
 		}
 		return requireFirm(firmId, role);
-	}
-
-	private CrossConnectHistory requireCurrentBase(AssetApplyCommand command) {
-		if (command.assetIdentityId() == null || command.baseHistoryId() == null) {
-			throw new AssetApplyException(
-					"Cross connect update/terminate requires assetIdentityId and baseHistoryId");
-		}
-		CrossConnectHistory prior = history.findById(command.baseHistoryId())
-				.orElseThrow(() -> new AssetApplyException(
-						"Cross connect history not found: " + command.baseHistoryId()));
-		if (!prior.getCrossConnectId().equals(command.assetIdentityId())) {
-			throw new AssetApplyException(
-					"baseHistoryId does not belong to cross connect " + command.assetIdentityId());
-		}
-		if (!prior.isCurrent()) {
-			throw new AssetApplyException("Stale cross connect baseHistoryId: " + command.baseHistoryId());
-		}
-		return prior;
-	}
-
-	private static AssetApplyResult result(CrossConnectHistory prior, CrossConnectHistory created) {
-		List<AssetHistoryLink> links = new ArrayList<>();
-		links.add(new AssetHistoryLink(prior.getCrossConnectHistoryId(), AssetHistoryLink.ROLE_CLOSED_PRIOR));
-		links.add(new AssetHistoryLink(created.getCrossConnectHistoryId(), AssetHistoryLink.ROLE_CREATED));
-		return new AssetApplyResult(prior.getCrossConnectId(), List.copyOf(links));
 	}
 }

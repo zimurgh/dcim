@@ -1,17 +1,14 @@
 package com.dcim.connectivity.marketdatafeed;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.dcim.asset.AssetChangeValidator;
+import com.dcim.asset.AbstractAssetChangeValidator;
 import com.dcim.asset.AssetValidateCommand;
-import com.dcim.asset.AuditHistory;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.asset.PayloadValidation;
 import com.dcim.asset.ValidationCodes;
-import com.dcim.asset.ValidationContext;
 import com.dcim.asset.ValidationIssue;
 import com.dcim.connectivity.crossconnect.CrossConnectDto;
 import com.dcim.connectivity.crossconnect.CrossConnectService;
@@ -25,9 +22,8 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
-class MarketDataFeedAssetChangeValidator implements AssetChangeValidator {
+class MarketDataFeedAssetChangeValidator extends AbstractAssetChangeValidator<MarketDataFeedHistory> {
 
-	private static final Set<String> ACTIONS = Set.of("ADD", "UPDATE", "TERMINATE");
 	private static final Set<String> ALLOWED_FIELDS = Set.of(
 			"marketDataFeedName",
 			"crossConnectId",
@@ -40,7 +36,6 @@ class MarketDataFeedAssetChangeValidator implements AssetChangeValidator {
 	private final CrossConnectService crossConnects;
 	private final MarketDataFeedTypeService feedTypes;
 	private final FirmService firms;
-	private final JsonPayloads payloads;
 
 	MarketDataFeedAssetChangeValidator(
 			MarketDataFeedHistoryRepository history,
@@ -48,50 +43,18 @@ class MarketDataFeedAssetChangeValidator implements AssetChangeValidator {
 			MarketDataFeedTypeService feedTypes,
 			FirmService firms,
 			JsonPayloads payloads) {
+		super("MARKET_DATA_FEED", "market data feed", ALLOWED_FIELDS, history,
+				MarketDataFeedHistory::getMarketDataFeedId, payloads);
 		this.history = history;
 		this.crossConnects = crossConnects;
 		this.feedTypes = feedTypes;
 		this.firms = firms;
-		this.payloads = payloads;
 	}
 
 	@Override
-	public boolean supports(String assetType) {
-		return "MARKET_DATA_FEED".equals(assetType);
-	}
-
-	@Override
-	public List<ValidationIssue> validate(AssetValidateCommand command, ValidationContext context) {
-		List<ValidationIssue> issues = new ArrayList<>();
-		if (!ACTIONS.contains(command.action())) {
-			issues.add(new ValidationIssue(
-					ValidationCodes.UNSUPPORTED_ACTION,
-					"Unsupported market data feed action: " + command.action()));
-			return issues;
-		}
-		JsonNode body = readBody(command, issues);
-		if (body == null) {
-			return issues;
-		}
-		issues.addAll(PayloadValidation.unknownFields(body, ALLOWED_FIELDS));
-
-		boolean isAdd = "ADD".equals(command.action());
-		boolean isTerminate = "TERMINATE".equals(command.action());
-
-		MarketDataFeedHistory base = null;
-		if (!isAdd) {
-			base = PayloadValidation.validateConcurrency(
-					command.assetIdentityId(),
-					command.baseHistoryId(),
-					history::findById,
-					MarketDataFeedHistory::getMarketDataFeedId,
-					AuditHistory::isCurrent,
-					issues);
-		}
-
-		if (isTerminate) {
-			return issues;
-		}
+	protected void validateAddOrUpdate(
+			AssetValidateCommand command, JsonNode body, MarketDataFeedHistory base, List<ValidationIssue> issues) {
+		boolean isAdd = base == null;
 
 		PayloadValidation.requireText(body, "marketDataFeedName", issues);
 		String name = PayloadValidation.textOrNull(body, "marketDataFeedName");
@@ -119,18 +82,6 @@ class MarketDataFeedAssetChangeValidator implements AssetChangeValidator {
 
 		if (name != null && crossConnectId != null) {
 			validateNameClash(name, crossConnectId, command.assetIdentityId(), issues);
-		}
-
-		return issues;
-	}
-
-	private JsonNode readBody(AssetValidateCommand command, List<ValidationIssue> issues) {
-		try {
-			return payloads.read(command.payloadJson());
-		}
-		catch (RuntimeException ex) {
-			issues.add(new ValidationIssue(ValidationCodes.INVALID_PAYLOAD, ex.getMessage()));
-			return null;
 		}
 	}
 

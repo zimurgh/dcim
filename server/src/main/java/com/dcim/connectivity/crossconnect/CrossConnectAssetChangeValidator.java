@@ -1,13 +1,11 @@
 package com.dcim.connectivity.crossconnect;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import com.dcim.asset.AssetChangeValidator;
+import com.dcim.asset.AbstractAssetChangeValidator;
 import com.dcim.asset.AssetValidateCommand;
-import com.dcim.asset.AuditHistory;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.asset.PayloadValidation;
 import com.dcim.asset.ValidationCodes;
@@ -35,9 +33,8 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
-class CrossConnectAssetChangeValidator implements AssetChangeValidator {
+class CrossConnectAssetChangeValidator extends AbstractAssetChangeValidator<CrossConnectHistory> {
 
-	private static final Set<String> ACTIONS = Set.of("ADD", "UPDATE", "TERMINATE");
 	private static final Set<String> ALLOWED_FIELDS = Set.of(
 			"crossConnectName",
 			"circuitId",
@@ -58,7 +55,6 @@ class CrossConnectAssetChangeValidator implements AssetChangeValidator {
 	private final MarketDataFeedService marketDataFeeds;
 	private final DocumentService documents;
 	private final CableService cables;
-	private final JsonPayloads payloads;
 
 	CrossConnectAssetChangeValidator(
 			CrossConnectHistoryRepository history,
@@ -71,6 +67,8 @@ class CrossConnectAssetChangeValidator implements AssetChangeValidator {
 			DocumentService documents,
 			CableService cables,
 			JsonPayloads payloads) {
+		super("CROSS_CONNECT", "cross connect", ALLOWED_FIELDS, history, CrossConnectHistory::getCrossConnectId,
+				payloads);
 		this.history = history;
 		this.crossConnectTypes = crossConnectTypes;
 		this.latencies = latencies;
@@ -80,48 +78,12 @@ class CrossConnectAssetChangeValidator implements AssetChangeValidator {
 		this.marketDataFeeds = marketDataFeeds;
 		this.documents = documents;
 		this.cables = cables;
-		this.payloads = payloads;
 	}
 
 	@Override
-	public boolean supports(String assetType) {
-		return "CROSS_CONNECT".equals(assetType);
-	}
-
-	@Override
-	public List<ValidationIssue> validate(AssetValidateCommand command, ValidationContext context) {
-		List<ValidationIssue> issues = new ArrayList<>();
-		if (!ACTIONS.contains(command.action())) {
-			issues.add(new ValidationIssue(
-					ValidationCodes.UNSUPPORTED_ACTION, "Unsupported cross connect action: " + command.action()));
-			return issues;
-		}
-		JsonNode body = readBody(command, issues);
-		if (body == null) {
-			return issues;
-		}
-		issues.addAll(PayloadValidation.unknownFields(body, ALLOWED_FIELDS));
-
-		boolean isAdd = "ADD".equals(command.action());
-		boolean isTerminate = "TERMINATE".equals(command.action());
-
-		CrossConnectHistory base = null;
-		if (!isAdd) {
-			base = PayloadValidation.validateConcurrency(
-					command.assetIdentityId(),
-					command.baseHistoryId(),
-					history::findById,
-					CrossConnectHistory::getCrossConnectId,
-					AuditHistory::isCurrent,
-					issues);
-		}
-
-		if (isTerminate) {
-			if (base != null) {
-				validateTerminateGuard(base, context, issues);
-			}
-			return issues;
-		}
+	protected void validateAddOrUpdate(
+			AssetValidateCommand command, JsonNode body, CrossConnectHistory base, List<ValidationIssue> issues) {
+		boolean isAdd = base == null;
 
 		PayloadValidation.requireText(body, "crossConnectName", issues);
 
@@ -160,36 +122,11 @@ class CrossConnectAssetChangeValidator implements AssetChangeValidator {
 		if (circuitId != null) {
 			validateCircuitClash(circuitId, command.assetIdentityId(), issues);
 		}
-
-		return issues;
 	}
 
-	private JsonNode readBody(AssetValidateCommand command, List<ValidationIssue> issues) {
-		try {
-			return payloads.read(command.payloadJson());
-		}
-		catch (RuntimeException ex) {
-			issues.add(new ValidationIssue(ValidationCodes.INVALID_PAYLOAD, ex.getMessage()));
-			return null;
-		}
-	}
-
-	private void validateCircuitClash(String circuitId, Long selfId, List<ValidationIssue> issues) {
-		List<Long> clashes = history.findCurrentByCircuitId(circuitId).stream()
-				.filter(h -> PayloadValidation.isActiveStatus(h.getStatus()))
-				.map(CrossConnectHistory::getCrossConnectId)
-				.filter(id -> !Objects.equals(id, selfId))
-				.toList();
-		if (!clashes.isEmpty()) {
-			issues.add(new ValidationIssue(
-					ValidationCodes.VALUE_CLASH,
-					"circuitId",
-					"circuitId already used by an active cross connect",
-					clashes));
-		}
-	}
-
-	private void validateTerminateGuard(CrossConnectHistory base, ValidationContext context, List<ValidationIssue> issues) {
+	@Override
+	protected void validateTerminate(
+			CrossConnectHistory base, ValidationContext context, List<ValidationIssue> issues) {
 		Long crossConnectId = base.getCrossConnectId();
 
 		List<Long> liveFeeds = marketDataFeeds.listCurrentByCrossConnect(crossConnectId).stream()
@@ -220,6 +157,21 @@ class CrossConnectAssetChangeValidator implements AssetChangeValidator {
 		if (!liveCables.isEmpty()) {
 			issues.add(new ValidationIssue(
 					ValidationCodes.ACTIVE_CHILDREN, null, "Cross connect has active cables", liveCables));
+		}
+	}
+
+	private void validateCircuitClash(String circuitId, Long selfId, List<ValidationIssue> issues) {
+		List<Long> clashes = history.findCurrentByCircuitId(circuitId).stream()
+				.filter(h -> PayloadValidation.isActiveStatus(h.getStatus()))
+				.map(CrossConnectHistory::getCrossConnectId)
+				.filter(id -> !Objects.equals(id, selfId))
+				.toList();
+		if (!clashes.isEmpty()) {
+			issues.add(new ValidationIssue(
+					ValidationCodes.VALUE_CLASH,
+					"circuitId",
+					"circuitId already used by an active cross connect",
+					clashes));
 		}
 	}
 }

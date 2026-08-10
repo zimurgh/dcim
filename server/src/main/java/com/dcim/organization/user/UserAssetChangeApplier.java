@@ -1,13 +1,7 @@
 package com.dcim.organization.user;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dcim.asset.AbstractAssetChangeApplier;
 import com.dcim.asset.AssetApplyCommand;
-import com.dcim.asset.AssetApplyException;
-import com.dcim.asset.AssetApplyResult;
-import com.dcim.asset.AssetChangeApplier;
-import com.dcim.asset.AssetHistoryLink;
 import com.dcim.asset.JsonPayloads;
 
 import org.springframework.stereotype.Component;
@@ -15,79 +9,55 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
 @Component
-class UserAssetChangeApplier implements AssetChangeApplier {
-
-	private final UserIdentityRepository identities;
-	private final UserHistoryRepository history;
-	private final JsonPayloads payloads;
+class UserAssetChangeApplier extends AbstractAssetChangeApplier<UserIdentity, UserHistory> {
 
 	UserAssetChangeApplier(
 			UserIdentityRepository identities,
 			UserHistoryRepository history,
 			JsonPayloads payloads) {
-		this.identities = identities;
-		this.history = history;
-		this.payloads = payloads;
+		super(
+				"USER",
+				"user",
+				identities,
+				history,
+				payloads,
+				UserIdentity::new,
+				UserIdentity::getUserId,
+				UserHistory::getUserId,
+				UserHistory::getUserHistoryId);
 	}
 
 	@Override
-	public boolean supports(String assetType) {
-		return "USER".equals(assetType);
-	}
-
-	@Override
-	public AssetApplyResult apply(AssetApplyCommand command) {
-		return switch (command.action()) {
-			case "ADD" -> add(command);
-			case "UPDATE" -> update(command);
-			case "TERMINATE" -> terminate(command);
-			default -> throw new AssetApplyException("Unsupported user action: " + command.action());
-		};
-	}
-
-	private AssetApplyResult add(AssetApplyCommand command) {
-		JsonNode body = payloads.read(command.payloadJson());
-		String userName = JsonPayloads.requiredText(body, "userName");
-		boolean isInitiator = JsonPayloads.booleanOrDefault(body, "isInitiator", false);
-		UserIdentity identity = identities.saveAndFlush(new UserIdentity());
-		UserHistory created = history.saveAndFlush(new UserHistory(
+	protected UserHistory createAdd(UserIdentity identity, JsonNode body, AssetApplyCommand command) {
+		return new UserHistory(
 				identity,
-				userName,
-				isInitiator,
+				JsonPayloads.requiredText(body, "userName"),
+				JsonPayloads.booleanOrDefault(body, "isInitiator", false),
 				command.validOn(),
 				null,
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return new AssetApplyResult(
-				identity.getUserId(),
-				List.of(new AssetHistoryLink(created.getUserHistoryId(), AssetHistoryLink.ROLE_CREATED)));
+				command.committedStatus());
 	}
 
-	private AssetApplyResult update(AssetApplyCommand command) {
-		UserHistory prior = requireCurrentBase(command);
-		JsonNode body = payloads.read(command.payloadJson());
-		String userName = JsonPayloads.requiredText(body, "userName");
-		boolean isInitiator = JsonPayloads.booleanOrDefault(body, "isInitiator", prior.isInitiator());
-		prior.close(command.validOn());
-		UserHistory created = history.saveAndFlush(new UserHistory(
+	@Override
+	protected UserHistory createUpdate(UserHistory prior, JsonNode body, AssetApplyCommand command) {
+		return new UserHistory(
 				prior.getUserIdentity(),
-				userName,
-				isInitiator,
+				JsonPayloads.requiredText(body, "userName"),
+				JsonPayloads.booleanOrDefault(body, "isInitiator", prior.isInitiator()),
 				command.validOn(),
 				null,
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return result(prior, created);
+				command.committedStatus());
 	}
 
-	private AssetApplyResult terminate(AssetApplyCommand command) {
-		UserHistory prior = requireCurrentBase(command);
-		prior.close(command.validOn());
-		UserHistory created = history.saveAndFlush(new UserHistory(
+	@Override
+	protected UserHistory createTerminate(UserHistory prior, AssetApplyCommand command) {
+		return new UserHistory(
 				prior.getUserIdentity(),
 				prior.getUserName(),
 				prior.isInitiator(),
@@ -96,29 +66,6 @@ class UserAssetChangeApplier implements AssetChangeApplier {
 				command.appliedAt(),
 				command.appliedBy(),
 				command.action(),
-				command.committedStatus()));
-		return result(prior, created);
-	}
-
-	private UserHistory requireCurrentBase(AssetApplyCommand command) {
-		if (command.assetIdentityId() == null || command.baseHistoryId() == null) {
-			throw new AssetApplyException("User update/terminate requires assetIdentityId and baseHistoryId");
-		}
-		UserHistory prior = history.findById(command.baseHistoryId())
-				.orElseThrow(() -> new AssetApplyException("User history not found: " + command.baseHistoryId()));
-		if (!prior.getUserId().equals(command.assetIdentityId())) {
-			throw new AssetApplyException("baseHistoryId does not belong to user " + command.assetIdentityId());
-		}
-		if (!prior.isCurrent()) {
-			throw new AssetApplyException("Stale user baseHistoryId: " + command.baseHistoryId());
-		}
-		return prior;
-	}
-
-	private static AssetApplyResult result(UserHistory prior, UserHistory created) {
-		List<AssetHistoryLink> links = new ArrayList<>();
-		links.add(new AssetHistoryLink(prior.getUserHistoryId(), AssetHistoryLink.ROLE_CLOSED_PRIOR));
-		links.add(new AssetHistoryLink(created.getUserHistoryId(), AssetHistoryLink.ROLE_CREATED));
-		return new AssetApplyResult(prior.getUserId(), List.copyOf(links));
+				command.committedStatus());
 	}
 }
