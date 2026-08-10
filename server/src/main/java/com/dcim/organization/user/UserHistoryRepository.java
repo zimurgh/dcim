@@ -23,4 +23,12 @@ public interface UserHistoryRepository extends JpaRepository<UserHistory, Long> 
 	Optional<UserHistory> findCurrentByUserId(@Param("userId") Long userId);
 
 	List<UserHistory> findByUserIdentity_UserIdOrderByUserHistoryIdAsc(Long userId);
+
+	@Query("""
+			select count(u) > 0 from UserHistory u
+			where u.validTo is null and u.status = 'Active'
+			and lower(u.userName) = lower(:name)
+			and (:excludeId is null or u.userIdentity.userId <> :excludeId)
+			""")
+	boolean existsActiveNameClash(@Param("name") String name, @Param("excludeId") Long excludeId);
 }

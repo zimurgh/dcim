@@ -72,6 +72,11 @@ class ChangeSpecController {
 		return wrap(() -> specs.apply(changeSpecId, request.appliedBy()));
 	}
 
+	@GetMapping("/{changeSpecId}/validate")
+	ChangeValidationResult validate(@PathVariable Long changeSpecId) {
+		return wrap(() -> specs.validate(changeSpecId));
+	}
+
 	@PostMapping("/{changeSpecId}/cancel")
 	ChangeSpecDto cancel(@PathVariable Long changeSpecId) {
 		return wrap(() -> specs.cancel(changeSpecId));
@@ -80,6 +85,9 @@ class ChangeSpecController {
 	private <T> T wrap(Callable<T> action) {
 		try {
 			return action.call();
+		}
+		catch (ValidationFailedException ex) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
 		}
 		catch (WorkflowException ex) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

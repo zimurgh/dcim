@@ -34,4 +34,9 @@ public class MarketDataFeedTypeService {
 				.map(MarketDataFeedTypeDto::from)
 				.toList();
 	}
+
+	@Transactional(readOnly = true)
+	public List<MarketDataFeedTypeDto> listCurrentByChargeTypeId(Long chargeTypeId) {
+		return types.findCurrentByChargeTypeId(chargeTypeId).stream().map(MarketDataFeedTypeDto::from).toList();
+	}
 }

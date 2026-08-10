@@ -1,6 +1,7 @@
 /**
  * Change and Change Spec workflow — promotion, specs, CHRECs, apply.
- * Asset-type apply lives in domain modules (organization, site, connectivity) via AssetChangeApplier.
+ * Changes, Change Specs, CHRECs, promotion, validation orchestration, and apply.
+ * Asset-type validate/apply lives in domain modules via AssetChangeValidator / AssetChangeApplier.
  */
 @org.springframework.modulith.ApplicationModule(
 		displayName = "Workflow",

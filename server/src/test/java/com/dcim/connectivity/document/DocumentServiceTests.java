@@ -67,8 +67,9 @@ class DocumentServiceTests {
 
 	@Test
 	void updatesDocumentThroughChangeWorkflow() {
-		Long crossConnectId = seedCrossConnect();
-		Long otherCrossConnectId = seedCrossConnect("XC-2");
+		Deps deps = seedSharedDeps();
+		Long crossConnectId = buildCrossConnect("XC-1", deps);
+		Long otherCrossConnectId = buildCrossConnect("XC-2", deps);
 		ChangeDto added = applyAdd(
 				AssetType.DOCUMENT,
 				"{\"documentName\":\"LOA-1\",\"crossConnectId\":" + crossConnectId + "}");
@@ -143,8 +144,10 @@ class DocumentServiceTests {
 	}
 
 	private Long seedCrossConnect(String name) {
-		Long ownerFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"Owner-" + name + "\"}").assetIdentityId();
-		Long billingFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"Billing-" + name + "\"}").assetIdentityId();
+		return buildCrossConnect(name, seedSharedDeps());
+	}
+
+	private Deps seedSharedDeps() {
 		Long latencyId = applyAdd(
 				AssetType.LATENCY,
 				"{\"latencyName\":\"Low Latency\",\"latencyType\":\"LL\"}")
@@ -157,15 +160,24 @@ class DocumentServiceTests {
 				AssetType.CROSS_CONNECT_TYPE,
 				"{\"crossConnectTypeName\":\"Single Mode Fiber\"}")
 				.assetIdentityId();
+		return new Deps(latencyId, speedId, crossConnectTypeId);
+	}
+
+	private Long buildCrossConnect(String name, Deps deps) {
+		Long ownerFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"Owner-" + name + "\"}").assetIdentityId();
+		Long billingFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"Billing-" + name + "\"}").assetIdentityId();
 		return applyAdd(
 				AssetType.CROSS_CONNECT,
 				"{\"crossConnectName\":\"" + name + "\",\"circuitId\":\"CKT-" + name
-						+ "\",\"crossConnectTypeId\":" + crossConnectTypeId
-						+ ",\"latencyId\":" + latencyId
-						+ ",\"speedId\":" + speedId
+						+ "\",\"crossConnectTypeId\":" + deps.crossConnectTypeId()
+						+ ",\"latencyId\":" + deps.latencyId()
+						+ ",\"speedId\":" + deps.speedId()
 						+ ",\"ownerFirmId\":" + ownerFirmId
 						+ ",\"billingFirmId\":" + billingFirmId + "}")
 				.assetIdentityId();
+	}
+
+	private record Deps(Long latencyId, Long speedId, Long crossConnectTypeId) {
 	}
 
 	private ChangeDto applyAdd(AssetType assetType, String payload) {

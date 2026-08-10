@@ -54,6 +54,11 @@ class ChangeController {
 		return wrap(() -> changes.applyStaged(changeId, request.appliedBy()));
 	}
 
+	@GetMapping("/{changeId}/validate")
+	ChangeValidationResult validate(@PathVariable Long changeId) {
+		return wrap(() -> changes.validateStaged(changeId));
+	}
+
 	@DeleteMapping("/{changeId}")
 	void cancel(@PathVariable Long changeId) {
 		wrap(() -> {
@@ -65,6 +70,9 @@ class ChangeController {
 	private <T> T wrap(java.util.concurrent.Callable<T> action) {
 		try {
 			return action.call();
+		}
+		catch (ValidationFailedException ex) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
 		}
 		catch (WorkflowException ex) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,7 +12,11 @@ import com.dcim.asset.AssetApplyCommand;
 import com.dcim.asset.AssetApplyException;
 import com.dcim.asset.AssetApplyResult;
 import com.dcim.asset.AssetChangeApplier;
+import com.dcim.asset.AssetChangeValidator;
 import com.dcim.asset.AssetHistoryLink;
+import com.dcim.asset.AssetValidateCommand;
+import com.dcim.asset.ValidationContext;
+import com.dcim.asset.ValidationIssue;
 
 import jakarta.persistence.*;
 
@@ -30,6 +35,7 @@ public class ChangeService {
 	private final ChangeActionStatusRepository actionStatuses;
 	private final ChangeSpecItemRepository specItems;
 	private final List<AssetChangeApplier> appliers;
+	private final List<AssetChangeValidator> validators;
 	private final EntityManager entityManager;
 	private final Clock clock;
 
@@ -43,6 +49,7 @@ public class ChangeService {
 			ChangeActionStatusRepository actionStatuses,
 			ChangeSpecItemRepository specItems,
 			List<AssetChangeApplier> appliers,
+			List<AssetChangeValidator> validators,
 			EntityManager entityManager,
 			Optional<Clock> clock) {
 		this.identities = identities;
@@ -54,6 +61,7 @@ public class ChangeService {
 		this.actionStatuses = actionStatuses;
 		this.specItems = specItems;
 		this.appliers = List.copyOf(appliers);
+		this.validators = List.copyOf(validators);
 		this.entityManager = entityManager;
 		this.clock = clock.orElse(Clock.systemUTC());
 	}
@@ -147,10 +155,37 @@ public class ChangeService {
 		throw new WorkflowException("No open change to cancel: " + changeId);
 	}
 
+	@Transactional(readOnly = true)
+	public ChangeValidationResult validateStaged(Long changeId) {
+		ChangeStaged open = requireStaged(changeId);
+		ValidationContext context = batchContextFor(changeId);
+		return new ChangeValidationResult(changeId, validate(open, context));
+	}
+
+	@Transactional(readOnly = true)
+	List<ValidationIssue> validateAll(List<ChangeStaged> membership) {
+		ValidationContext context = batchContext(membership);
+		List<ValidationIssue> issues = new ArrayList<>();
+		for (ChangeStaged open : membership) {
+			for (ValidationIssue issue : validate(open, context)) {
+				issues.add(new ValidationIssue(
+						issue.code(),
+						issue.field(),
+						"Change " + open.getChangeId() + ": " + issue.message(),
+						issue.relatedIdentityIds()));
+			}
+		}
+		return List.copyOf(issues);
+	}
+
 	@Transactional
 	public ChangeDto applyStaged(Long changeId, Long appliedBy) {
 		ChangeStaged open = staged.findById(changeId)
 				.orElseThrow(() -> new WorkflowException("Change is not staged: " + changeId));
+		List<ValidationIssue> issues = validate(open, batchContextFor(changeId));
+		if (!issues.isEmpty()) {
+			throw new ValidationFailedException(issues);
+		}
 		return commitStaged(open, appliedBy);
 	}
 
@@ -233,11 +268,59 @@ public class ChangeService {
 				.orElseThrow(() -> new WorkflowException("Change is not staged: " + changeId));
 	}
 
+	List<ChangeStaged> loadStaged(List<Long> changeIds) {
+		List<ChangeStaged> rows = new ArrayList<>();
+		for (Long changeId : changeIds) {
+			rows.add(requireStaged(changeId));
+		}
+		return rows;
+	}
+
+	private List<ValidationIssue> validate(ChangeStaged open, ValidationContext context) {
+		AssetValidateCommand command = new AssetValidateCommand(
+				open.getAssetType().name(),
+				open.getAction().name(),
+				open.getPayload().getBody(),
+				open.getAssetIdentityId(),
+				open.getBaseHistoryId());
+		return validatorFor(open.getAssetType()).validate(command, context);
+	}
+
+	private ValidationContext batchContextFor(Long changeId) {
+		List<ChangeSpecItem> membership = specItems.findByChangeIdentity_ChangeId(changeId);
+		if (membership.isEmpty()) {
+			ChangeStaged open = requireStaged(changeId);
+			return batchContext(List.of(open));
+		}
+		Long changeSpecId = membership.getFirst().getChangeSpec().getChangeSpecId();
+		List<Long> changeIds = specItems.findByChangeSpec_ChangeSpecId(changeSpecId).stream()
+				.map(item -> item.getChangeIdentity().getChangeId())
+				.toList();
+		return batchContext(loadStaged(changeIds));
+	}
+
+	private ValidationContext batchContext(List<ChangeStaged> membership) {
+		List<ValidationContext.BatchIntent> intents = membership.stream()
+				.map(row -> new ValidationContext.BatchIntent(
+						row.getAssetType().name(),
+						row.getAction().name(),
+						row.getAssetIdentityId()))
+				.toList();
+		return new ValidationContext(intents);
+	}
+
 	private AssetChangeApplier applierFor(AssetType assetType) {
 		return appliers.stream()
 				.filter(applier -> applier.supports(assetType.name()))
 				.findFirst()
 				.orElseThrow(() -> new WorkflowException("No asset applier for " + assetType));
+	}
+
+	private AssetChangeValidator validatorFor(AssetType assetType) {
+		return validators.stream()
+				.filter(validator -> validator.supports(assetType.name()))
+				.findFirst()
+				.orElseThrow(() -> new WorkflowException("No asset validator for " + assetType));
 	}
 
 	private static HistoryLinkRole toRole(String role) {

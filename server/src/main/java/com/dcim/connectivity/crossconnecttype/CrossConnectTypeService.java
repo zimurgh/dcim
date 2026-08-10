@@ -34,4 +34,9 @@ public class CrossConnectTypeService {
 				.map(CrossConnectTypeDto::from)
 				.toList();
 	}
+
+	@Transactional(readOnly = true)
+	public List<CrossConnectTypeDto> listCurrentByChargeTypeId(Long chargeTypeId) {
+		return types.findCurrentByChargeTypeId(chargeTypeId).stream().map(CrossConnectTypeDto::from).toList();
+	}
 }

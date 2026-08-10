@@ -23,6 +23,12 @@ interface MarketDataFeedTypeHistoryRepository extends JpaRepository<MarketDataFe
 	Optional<MarketDataFeedTypeHistory> findCurrentByMarketDataFeedTypeId(
 			@Param("marketDataFeedTypeId") Long marketDataFeedTypeId);
 
+	@Query("""
+			select t from MarketDataFeedTypeHistory t
+			where t.chargeTypeIdentity.chargeTypeId = :chargeTypeId and t.validTo is null
+			""")
+	List<MarketDataFeedTypeHistory> findCurrentByChargeTypeId(@Param("chargeTypeId") Long chargeTypeId);
+
 	List<MarketDataFeedTypeHistory>
 			findByMarketDataFeedTypeIdentity_MarketDataFeedTypeIdOrderByMarketDataFeedTypeHistoryIdAsc(
 					Long marketDataFeedTypeId);

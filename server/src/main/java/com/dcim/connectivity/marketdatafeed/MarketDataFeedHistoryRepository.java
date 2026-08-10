@@ -30,6 +30,13 @@ interface MarketDataFeedHistoryRepository extends JpaRepository<MarketDataFeedHi
 			""")
 	List<MarketDataFeedHistory> findCurrentByCrossConnectId(@Param("crossConnectId") Long crossConnectId);
 
+	@Query("""
+			select m from MarketDataFeedHistory m
+			where m.marketDataFeedTypeIdentity.marketDataFeedTypeId = :marketDataFeedTypeId and m.validTo is null
+			""")
+	List<MarketDataFeedHistory> findCurrentByMarketDataFeedTypeId(
+			@Param("marketDataFeedTypeId") Long marketDataFeedTypeId);
+
 	List<MarketDataFeedHistory> findByMarketDataFeedIdentity_MarketDataFeedIdOrderByMarketDataFeedHistoryIdAsc(
 			Long marketDataFeedId);
 }

@@ -23,4 +23,12 @@ interface ExchangeHistoryRepository extends JpaRepository<ExchangeHistory, Long>
 	Optional<ExchangeHistory> findCurrentByExchangeId(@Param("exchangeId") Long exchangeId);
 
 	List<ExchangeHistory> findByExchangeIdentity_ExchangeIdOrderByExchangeHistoryIdAsc(Long exchangeId);
+
+	@Query("""
+			select count(e) > 0 from ExchangeHistory e
+			where e.validTo is null and e.status = 'Active'
+			and lower(e.exchangeName) = lower(:name)
+			and (:excludeId is null or e.exchangeIdentity.exchangeId <> :excludeId)
+			""")
+	boolean existsActiveNameClash(@Param("name") String name, @Param("excludeId") Long excludeId);
 }

@@ -1,5 +1,5 @@
 /**
- * Shared asset contracts and history base types.
+ * Shared asset contracts, history base types, and validate/apply ports.
  */
 @org.springframework.modulith.ApplicationModule(
 		displayName = "Asset"

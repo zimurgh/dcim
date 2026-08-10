@@ -64,7 +64,7 @@ Organization holds parties (e.g. Firm) with the same identity + history pattern.
 | Module | Role
 
 | `asset`
-| Shared history base types / future validate–apply ports
+| Shared history base types and validate/apply ports (`AssetChangeValidator`, `AssetChangeApplier`)
 
 | `organization`
 | Firms and similar commercial parties
@@ -73,7 +73,7 @@ Organization holds parties (e.g. Firm) with the same identity + history pattern.
 | Whole spatial inventory tree (not one Modulith module per level)
 
 | `workflow`
-| Changes, Change Specs, CHRECs, promotion, apply orchestration
+| Changes, Change Specs, CHRECs, promotion, validation orchestration, apply
 
 | `connectivity`
 | Cross-connects, market data feeds, and cables between firms and ports
@@ -81,6 +81,16 @@ Organization holds parties (e.g. Firm) with the same identity + history pattern.
 
 Workflow orchestrates; `organization` / `site` / `connectivity` implement type-specific validate/apply.
 Intra-site dependency checks (e.g. terminate device ⇒ ports) use site queries plus change-spec/batch context — not async events for the guard itself.
+
+=== Change validation
+
+* **Save independent of validation**: create/amend Untracked or Staged always succeeds (including invalid payloads).
+* **Diagnosable**: `GET /api/changes/{id}/validate` and `GET /api/change-specs/{id}/validate` return structured `ValidationIssue`s (`code`, optional `field`, `message`, related identity ids).
+* **Apply is a hard gate**: staged apply (lone change or Change Spec) refuses with conflict when any issues remain; ledger is not mutated.
+* **Batch-aware**: validators see sibling staged intents on the same Change Spec so terminate-parent + terminate-children in one batch can pass.
+* **Apply order** on a Change Spec: dependents first, then parents.
+* **Deferred**: field-level editability / RBAC (“can this user edit this field?”).
+* Common issue codes include `UNKNOWN_FIELD`, `MISSING_FIELD`, `NAME_CLASH`, `VALUE_CLASH`, `ACTIVE_CHILDREN`, `ACTIVE_REFERENCES`, `STALE_BASE`, `REFERENCE_NOT_FOUND`, `REFERENCE_NOT_ACTIVE`.
 
 Connectivity shape:
 
@@ -201,7 +211,10 @@ Focus TLA+ / property tests on: linear history per identity, apply-only ledger a
 A: No. The only way to advance the ledger is apply (commit) of Changes. That keeps a single apply path. Not every Change must sit on a Change Spec — only those that affect owner-firm billing or connectivity.
 
 **Q: Should asset-specific validation live in workflow?**
-A: No. Common editing/validation mechanics can be shared; asset-specific rules live in domain modules (`organization`, `site`, …). Workflow is data-driven (lookup table in schema) for stage→status and process gates.
+A: No. Common editing/validation mechanics (`ValidationIssue`, payload helpers, apply gate, batch context) live in `asset` / `workflow`; asset-specific rules live in domain modules via `AssetChangeValidator`. Workflow is data-driven (lookup table in schema) for stage→status and process gates. Field-level edit permissions are deferred.
+
+**Q: When are changes validated?**
+A: Anytime a change is Staged (on-demand validate API). Apply always re-validates and blocks on issues. Untracked save/amend never requires validation.
 
 **Q: When an asset record is sent to the client, what should be sent?**
 A: A custom shallow DTO via a view — encode both names and ids for references.

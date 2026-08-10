@@ -32,4 +32,21 @@ public class CrossConnectService {
 				.map(CrossConnectDto::from)
 				.toList();
 	}
+
+	@Transactional(readOnly = true)
+	public List<CrossConnectDto> listCurrentByLatencyId(Long latencyId) {
+		return crossConnects.findCurrentByLatencyId(latencyId).stream().map(CrossConnectDto::from).toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<CrossConnectDto> listCurrentBySpeedId(Long speedId) {
+		return crossConnects.findCurrentBySpeedId(speedId).stream().map(CrossConnectDto::from).toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<CrossConnectDto> listCurrentByCrossConnectTypeId(Long crossConnectTypeId) {
+		return crossConnects.findCurrentByCrossConnectTypeId(crossConnectTypeId).stream()
+				.map(CrossConnectDto::from)
+				.toList();
+	}
 }

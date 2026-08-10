@@ -8,6 +8,8 @@ interface ChangeSpecItemRepository extends JpaRepository<ChangeSpecItem, ChangeS
 
 	List<ChangeSpecItem> findByChangeSpec_ChangeSpecId(Long changeSpecId);
 
+	List<ChangeSpecItem> findByChangeIdentity_ChangeId(Long changeId);
+
 	boolean existsByChangeIdentity_ChangeId(Long changeId);
 
 	void deleteByChangeSpec_ChangeSpecIdAndChangeIdentity_ChangeId(Long changeSpecId, Long changeId);

@@ -29,5 +29,12 @@ interface CableHistoryRepository extends JpaRepository<CableHistory, Long> {
 			""")
 	List<CableHistory> findCurrentByCrossConnectId(@Param("crossConnectId") Long crossConnectId);
 
+	@Query("""
+			select c from CableHistory c
+			where c.validTo is null
+			  and (c.portAIdentity.rackDevicePortId = :portId or c.portBIdentity.rackDevicePortId = :portId)
+			""")
+	List<CableHistory> findCurrentByPortId(@Param("portId") Long portId);
+
 	List<CableHistory> findByCableIdentity_CableIdOrderByCableHistoryIdAsc(Long cableId);
 }

@@ -126,13 +126,30 @@ public class ChangeSpecService {
 		if (specChrecs.countByChangeSpec_ChangeSpecId(changeSpecId) < 1) {
 			throw new WorkflowException("At least one CHREC is required to apply");
 		}
-		List<ChangeSpecItem> membership = items.findByChangeSpec_ChangeSpecId(changeSpecId);
-		for (ChangeSpecItem item : membership) {
-			ChangeStaged staged = changes.requireStaged(item.getChangeIdentity().getChangeId());
+		List<Long> changeIds = items.findByChangeSpec_ChangeSpecId(changeSpecId).stream()
+				.map(item -> item.getChangeIdentity().getChangeId())
+				.toList();
+		List<ChangeStaged> membership = AssetApplyOrder.sort(changes.loadStaged(changeIds));
+		List<com.dcim.asset.ValidationIssue> issues = changes.validateAll(membership);
+		if (!issues.isEmpty()) {
+			throw new ValidationFailedException(issues);
+		}
+		for (ChangeStaged staged : membership) {
 			changes.commitStaged(staged, appliedBy);
 		}
 		spec.setStatus(ChangeSpecStatus.APPLIED);
 		return toDto(spec);
+	}
+
+	@Transactional(readOnly = true)
+	public ChangeValidationResult validate(Long changeSpecId) {
+		ChangeSpec spec = specs.findById(changeSpecId)
+				.orElseThrow(() -> new WorkflowException("Change Spec not found: " + changeSpecId));
+		List<Long> changeIds = items.findByChangeSpec_ChangeSpecId(spec.getChangeSpecId()).stream()
+				.map(item -> item.getChangeIdentity().getChangeId())
+				.toList();
+		List<ChangeStaged> membership = changes.loadStaged(changeIds);
+		return new ChangeValidationResult(changeSpecId, changes.validateAll(membership));
 	}
 
 	@Transactional

@@ -24,4 +24,20 @@ interface MarketSegmentHistoryRepository extends JpaRepository<MarketSegmentHist
 
 	List<MarketSegmentHistory> findByMarketSegmentIdentity_MarketSegmentIdOrderByMarketSegmentHistoryIdAsc(
 			Long marketSegmentId);
+
+	@Query("""
+			select count(m) > 0 from MarketSegmentHistory m
+			where m.validTo is null and m.status = 'Active'
+			and lower(m.marketSegmentName) = lower(:name)
+			and (:excludeId is null or m.marketSegmentIdentity.marketSegmentId <> :excludeId)
+			""")
+	boolean existsActiveNameClash(@Param("name") String name, @Param("excludeId") Long excludeId);
+
+	@Query(value = """
+			select distinct x.CROSS_CONNECT_ID
+			from T_CROSS_CONNECT_HISTORY x
+			where x.VALID_TO is null and x.STATUS = 'Active'
+			and x.MARKET_SEGMENT_ID = :marketSegmentId
+			""", nativeQuery = true)
+	List<Long> findActiveCrossConnectIdsReferencingMarketSegment(@Param("marketSegmentId") Long marketSegmentId);
 }

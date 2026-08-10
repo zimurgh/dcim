@@ -23,6 +23,12 @@ interface CrossConnectTypeHistoryRepository extends JpaRepository<CrossConnectTy
 	Optional<CrossConnectTypeHistory> findCurrentByCrossConnectTypeId(
 			@Param("crossConnectTypeId") Long crossConnectTypeId);
 
+	@Query("""
+			select t from CrossConnectTypeHistory t
+			where t.chargeTypeIdentity.chargeTypeId = :chargeTypeId and t.validTo is null
+			""")
+	List<CrossConnectTypeHistory> findCurrentByChargeTypeId(@Param("chargeTypeId") Long chargeTypeId);
+
 	List<CrossConnectTypeHistory>
 			findByCrossConnectTypeIdentity_CrossConnectTypeIdOrderByCrossConnectTypeHistoryIdAsc(
 					Long crossConnectTypeId);

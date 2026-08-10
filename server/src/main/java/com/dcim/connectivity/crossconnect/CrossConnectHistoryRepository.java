@@ -22,6 +22,30 @@ interface CrossConnectHistoryRepository extends JpaRepository<CrossConnectHistor
 			""")
 	Optional<CrossConnectHistory> findCurrentByCrossConnectId(@Param("crossConnectId") Long crossConnectId);
 
+	@Query("""
+			select c from CrossConnectHistory c
+			where c.circuitId = :circuitId and c.validTo is null
+			""")
+	List<CrossConnectHistory> findCurrentByCircuitId(@Param("circuitId") String circuitId);
+
+	@Query("""
+			select c from CrossConnectHistory c
+			where c.latencyIdentity.latencyId = :latencyId and c.validTo is null
+			""")
+	List<CrossConnectHistory> findCurrentByLatencyId(@Param("latencyId") Long latencyId);
+
+	@Query("""
+			select c from CrossConnectHistory c
+			where c.speedIdentity.speedId = :speedId and c.validTo is null
+			""")
+	List<CrossConnectHistory> findCurrentBySpeedId(@Param("speedId") Long speedId);
+
+	@Query("""
+			select c from CrossConnectHistory c
+			where c.crossConnectTypeIdentity.crossConnectTypeId = :crossConnectTypeId and c.validTo is null
+			""")
+	List<CrossConnectHistory> findCurrentByCrossConnectTypeId(@Param("crossConnectTypeId") Long crossConnectTypeId);
+
 	List<CrossConnectHistory> findByCrossConnectIdentity_CrossConnectIdOrderByCrossConnectHistoryIdAsc(
 			Long crossConnectId);
 }
