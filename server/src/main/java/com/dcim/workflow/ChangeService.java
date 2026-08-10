@@ -13,7 +13,7 @@ import com.dcim.asset.AssetApplyResult;
 import com.dcim.asset.AssetChangeApplier;
 import com.dcim.asset.AssetHistoryLink;
 
-import jakarta.persistence.EntityManager;
+import jakarta.persistence.*;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

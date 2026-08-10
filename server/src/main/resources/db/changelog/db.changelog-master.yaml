@@ -1000,3 +1000,90 @@ databaseChangeLog:
               - column: { name: ACTION, value: TERMINATE }
               - column: { name: STAGE, value: COMMITTED }
               - column: { name: STATUS, value: Terminated }
+  - changeSet:
+      id: 0010-cage-view
+      author: dcim
+      comment: Cage view with data center name (instead of identity association)
+      changes:
+        - createView:
+            viewName: V_CAGE
+            selectQuery: |
+              SELECT
+                ch.CAGE_HISTORY_ID AS CAGE_HISTORY_ID,
+                ch.CAGE_ID AS CAGE_ID,
+                ch.DATA_CENTER_ID AS DATA_CENTER_ID,
+                dch.DATA_CENTER_NAME AS DATA_CENTER_NAME,
+                ch.CAGE_NAME AS CAGE_NAME,
+                ch.VALID_FROM AS VALID_FROM,
+                ch.VALID_TO AS VALID_TO,
+                ch.APPLIED_AT AS APPLIED_AT,
+                ch.APPLIED_BY AS APPLIED_BY,
+                ch.ACTION AS ACTION,
+                ch.STATUS AS STATUS
+              FROM T_CAGE_HISTORY ch
+              INNER JOIN T_DATA_CENTER_HISTORY dch
+                ON dch.DATA_CENTER_ID = ch.DATA_CENTER_ID
+               AND dch.VALID_TO IS NULL
+  - changeSet:
+      id: 0011-rack-view
+      author: dcim
+      comment: Rack view with cage and data center names flattened
+      changes:
+        - createView:
+            viewName: V_RACK
+            selectQuery: |
+              SELECT
+                rh.RACK_HISTORY_ID AS RACK_HISTORY_ID,
+                rh.RACK_ID AS RACK_ID,
+                rh.CAGE_ID AS CAGE_ID,
+                ch.CAGE_NAME AS CAGE_NAME,
+                ch.DATA_CENTER_ID AS DATA_CENTER_ID,
+                dch.DATA_CENTER_NAME AS DATA_CENTER_NAME,
+                rh.RACK_NAME AS RACK_NAME,
+                rh.VALID_FROM AS VALID_FROM,
+                rh.VALID_TO AS VALID_TO,
+                rh.APPLIED_AT AS APPLIED_AT,
+                rh.APPLIED_BY AS APPLIED_BY,
+                rh.ACTION AS ACTION,
+                rh.STATUS AS STATUS
+              FROM T_RACK_HISTORY rh
+              INNER JOIN T_CAGE_HISTORY ch
+                ON ch.CAGE_ID = rh.CAGE_ID
+               AND ch.VALID_TO IS NULL
+              INNER JOIN T_DATA_CENTER_HISTORY dch
+                ON dch.DATA_CENTER_ID = ch.DATA_CENTER_ID
+               AND dch.VALID_TO IS NULL
+  - changeSet:
+      id: 0012-rack-device-view
+      author: dcim
+      comment: Rack device view with rack, cage, and data center names flattened
+      changes:
+        - createView:
+            viewName: V_RACK_DEVICE
+            selectQuery: |
+              SELECT
+                rdh.RACK_DEVICE_HISTORY_ID AS RACK_DEVICE_HISTORY_ID,
+                rdh.RACK_DEVICE_ID AS RACK_DEVICE_ID,
+                rdh.RACK_ID AS RACK_ID,
+                rh.RACK_NAME AS RACK_NAME,
+                rh.CAGE_ID AS CAGE_ID,
+                ch.CAGE_NAME AS CAGE_NAME,
+                ch.DATA_CENTER_ID AS DATA_CENTER_ID,
+                dch.DATA_CENTER_NAME AS DATA_CENTER_NAME,
+                rdh.RACK_DEVICE_NAME AS RACK_DEVICE_NAME,
+                rdh.VALID_FROM AS VALID_FROM,
+                rdh.VALID_TO AS VALID_TO,
+                rdh.APPLIED_AT AS APPLIED_AT,
+                rdh.APPLIED_BY AS APPLIED_BY,
+                rdh.ACTION AS ACTION,
+                rdh.STATUS AS STATUS
+              FROM T_RACK_DEVICE_HISTORY rdh
+              INNER JOIN T_RACK_HISTORY rh
+                ON rh.RACK_ID = rdh.RACK_ID
+               AND rh.VALID_TO IS NULL
+              INNER JOIN T_CAGE_HISTORY ch
+                ON ch.CAGE_ID = rh.CAGE_ID
+               AND ch.VALID_TO IS NULL
+              INNER JOIN T_DATA_CENTER_HISTORY dch
+                ON dch.DATA_CENTER_ID = ch.DATA_CENTER_ID
+               AND dch.VALID_TO IS NULL

@@ -3,8 +3,7 @@ package com.dcim.asset;
 import java.time.Instant;
 import java.time.LocalDate;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 
 /**
  * Shared temporal / audit columns for append-only asset history rows.
