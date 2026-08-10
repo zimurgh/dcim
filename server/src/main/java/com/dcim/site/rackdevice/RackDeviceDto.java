@@ -1,7 +1,8 @@
 package com.dcim.site.rackdevice;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 /**
  * Shallow rack device DTO for API responses (current history row).
@@ -12,12 +13,7 @@ public record RackDeviceDto(
 		Long rackId,
 		Long rackDeviceTypeId,
 		String rackDeviceName,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static RackDeviceDto from(RackDeviceHistory history) {
 		return new RackDeviceDto(
@@ -26,11 +22,6 @@ public record RackDeviceDto(
 				history.getRackId(),
 				history.getRackDeviceTypeId(),
 				history.getRackDeviceName(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

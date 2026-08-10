@@ -2,12 +2,12 @@ package com.dcim.connectivity.chargetype;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.dcim.asset.AssetHttp;
 
 @RestController
 @RequestMapping("/api/charge-types")
@@ -26,17 +26,11 @@ class ChargeTypeController {
 
 	@GetMapping("/{chargeTypeId}")
 	ChargeTypeDto get(@PathVariable Long chargeTypeId) {
-		return types.findCurrent(chargeTypeId)
-				.orElseThrow(() -> new ResponseStatusException(
-						HttpStatus.NOT_FOUND, "Charge type not found: " + chargeTypeId));
+		return AssetHttp.requireFound(types.findCurrent(chargeTypeId), "Charge type", chargeTypeId);
 	}
 
 	@GetMapping("/{chargeTypeId}/history")
 	List<ChargeTypeDto> history(@PathVariable Long chargeTypeId) {
-		List<ChargeTypeDto> rows = types.history(chargeTypeId);
-		if (rows.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Charge type not found: " + chargeTypeId);
-		}
-		return rows;
+		return AssetHttp.requireNonEmpty(types.history(chargeTypeId), "Charge type", chargeTypeId);
 	}
 }

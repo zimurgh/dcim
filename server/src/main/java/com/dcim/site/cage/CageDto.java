@@ -1,7 +1,8 @@
 package com.dcim.site.cage;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 /**
  * Shallow cage DTO for API responses (current history row).
@@ -11,12 +12,7 @@ public record CageDto(
 		Long cageHistoryId,
 		Long dataCenterId,
 		String cageName,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static CageDto from(CageHistory history) {
 		return new CageDto(
@@ -24,11 +20,6 @@ public record CageDto(
 				history.getCageHistoryId(),
 				history.getDataCenterId(),
 				history.getCageName(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

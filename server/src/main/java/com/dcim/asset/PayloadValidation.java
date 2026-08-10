@@ -42,12 +42,7 @@ public final class PayloadValidation {
 	}
 
 	public static String textOrNull(JsonNode body, String field) {
-		JsonNode node = body.get(field);
-		if (node == null || node.isNull()) {
-			return null;
-		}
-		String value = node.asString();
-		return value.isBlank() ? null : value;
+		return JsonPayloads.textOrNull(body, field);
 	}
 
 	public static void requireLong(JsonNode body, String field, List<ValidationIssue> issues) {

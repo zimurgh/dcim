@@ -1,7 +1,8 @@
 package com.dcim.connectivity.crossconnect;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record CrossConnectDto(
 		Long crossConnectId,
@@ -15,12 +16,7 @@ public record CrossConnectDto(
 		Long ownerFirmId,
 		Long billingFirmId,
 		Long providerFirmId,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static CrossConnectDto from(CrossConnectHistory history) {
 		return new CrossConnectDto(
@@ -35,11 +31,6 @@ public record CrossConnectDto(
 				history.getOwnerFirmId(),
 				history.getBillingFirmId(),
 				history.getProviderFirmId(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

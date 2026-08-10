@@ -2,12 +2,12 @@ package com.dcim.connectivity.crossconnect;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.dcim.asset.AssetHttp;
 
 @RestController
 @RequestMapping("/api/cross-connects")
@@ -26,17 +26,11 @@ class CrossConnectController {
 
 	@GetMapping("/{crossConnectId}")
 	CrossConnectDto get(@PathVariable Long crossConnectId) {
-		return crossConnects.findCurrent(crossConnectId)
-				.orElseThrow(() -> new ResponseStatusException(
-						HttpStatus.NOT_FOUND, "Cross connect not found: " + crossConnectId));
+		return AssetHttp.requireFound(crossConnects.findCurrent(crossConnectId), "Cross connect", crossConnectId);
 	}
 
 	@GetMapping("/{crossConnectId}/history")
 	List<CrossConnectDto> history(@PathVariable Long crossConnectId) {
-		List<CrossConnectDto> rows = crossConnects.history(crossConnectId);
-		if (rows.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cross connect not found: " + crossConnectId);
-		}
-		return rows;
+		return AssetHttp.requireNonEmpty(crossConnects.history(crossConnectId), "Cross connect", crossConnectId);
 	}
 }

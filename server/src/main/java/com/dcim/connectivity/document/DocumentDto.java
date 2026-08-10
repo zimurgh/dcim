@@ -1,19 +1,15 @@
 package com.dcim.connectivity.document;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record DocumentDto(
 		Long documentId,
 		Long documentHistoryId,
 		Long crossConnectId,
 		String documentName,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static DocumentDto from(DocumentHistory history) {
 		return new DocumentDto(
@@ -21,11 +17,6 @@ public record DocumentDto(
 				history.getDocumentHistoryId(),
 				history.getCrossConnectId(),
 				history.getDocumentName(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

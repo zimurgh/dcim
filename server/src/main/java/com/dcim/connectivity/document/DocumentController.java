@@ -2,13 +2,13 @@ package com.dcim.connectivity.document;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.dcim.asset.AssetHttp;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -30,17 +30,11 @@ class DocumentController {
 
 	@GetMapping("/{documentId}")
 	DocumentDto get(@PathVariable Long documentId) {
-		return documents.findCurrent(documentId)
-				.orElseThrow(() -> new ResponseStatusException(
-						HttpStatus.NOT_FOUND, "Document not found: " + documentId));
+		return AssetHttp.requireFound(documents.findCurrent(documentId), "Document", documentId);
 	}
 
 	@GetMapping("/{documentId}/history")
 	List<DocumentDto> history(@PathVariable Long documentId) {
-		List<DocumentDto> rows = documents.history(documentId);
-		if (rows.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found: " + documentId);
-		}
-		return rows;
+		return AssetHttp.requireNonEmpty(documents.history(documentId), "Document", documentId);
 	}
 }

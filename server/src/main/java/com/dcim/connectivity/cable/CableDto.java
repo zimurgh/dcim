@@ -1,7 +1,8 @@
 package com.dcim.connectivity.cable;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record CableDto(
 		Long cableId,
@@ -10,12 +11,7 @@ public record CableDto(
 		Long portAId,
 		Long portBId,
 		Long crossConnectId,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static CableDto from(CableHistory history) {
 		return new CableDto(
@@ -25,11 +21,6 @@ public record CableDto(
 				history.getPortAId(),
 				history.getPortBId(),
 				history.getCrossConnectId(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

@@ -1,19 +1,15 @@
 package com.dcim.connectivity.marketdatafeedtype;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record MarketDataFeedTypeDto(
 		Long marketDataFeedTypeId,
 		Long marketDataFeedTypeHistoryId,
 		String marketDataFeedTypeName,
 		Long chargeTypeId,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static MarketDataFeedTypeDto from(MarketDataFeedTypeHistory history) {
 		return new MarketDataFeedTypeDto(
@@ -21,11 +17,6 @@ public record MarketDataFeedTypeDto(
 				history.getMarketDataFeedTypeHistoryId(),
 				history.getMarketDataFeedTypeName(),
 				history.getChargeTypeId(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

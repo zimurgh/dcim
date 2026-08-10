@@ -2,13 +2,13 @@ package com.dcim.connectivity.cable;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
+import com.dcim.asset.AssetHttp;
 
 @RestController
 @RequestMapping("/api/cables")
@@ -30,16 +30,11 @@ class CableController {
 
 	@GetMapping("/{cableId}")
 	CableDto get(@PathVariable Long cableId) {
-		return cables.findCurrent(cableId)
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cable not found: " + cableId));
+		return AssetHttp.requireFound(cables.findCurrent(cableId), "Cable", cableId);
 	}
 
 	@GetMapping("/{cableId}/history")
 	List<CableDto> history(@PathVariable Long cableId) {
-		List<CableDto> rows = cables.history(cableId);
-		if (rows.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cable not found: " + cableId);
-		}
-		return rows;
+		return AssetHttp.requireNonEmpty(cables.history(cableId), "Cable", cableId);
 	}
 }

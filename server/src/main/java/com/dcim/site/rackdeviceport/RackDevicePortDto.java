@@ -1,7 +1,8 @@
 package com.dcim.site.rackdeviceport;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record RackDevicePortDto(
 		Long rackDevicePortId,
@@ -9,12 +10,7 @@ public record RackDevicePortDto(
 		Long rackDeviceId,
 		Long rackDevicePortTypeId,
 		String rackDevicePortName,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static RackDevicePortDto from(RackDevicePortHistory history) {
 		return new RackDevicePortDto(
@@ -23,11 +19,6 @@ public record RackDevicePortDto(
 				history.getRackDeviceId(),
 				history.getRackDevicePortTypeId(),
 				history.getRackDevicePortName(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

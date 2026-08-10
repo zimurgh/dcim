@@ -1,7 +1,8 @@
 package com.dcim.organization.exchange;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record ExchangeDto(
 		Long exchangeId,
@@ -10,12 +11,7 @@ public record ExchangeDto(
 		String exchangeCode,
 		String exchangeAbbreviation,
 		ExchangeType exchangeType,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static ExchangeDto from(ExchangeHistory history) {
 		return new ExchangeDto(
@@ -25,11 +21,6 @@ public record ExchangeDto(
 				history.getExchangeCode(),
 				history.getExchangeAbbreviation(),
 				history.getExchangeType(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

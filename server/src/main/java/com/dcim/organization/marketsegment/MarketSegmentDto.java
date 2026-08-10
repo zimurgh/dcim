@@ -1,19 +1,15 @@
 package com.dcim.organization.marketsegment;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record MarketSegmentDto(
 		Long marketSegmentId,
 		Long marketSegmentHistoryId,
 		String marketSegmentName,
 		MarketSegmentType marketSegmentType,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static MarketSegmentDto from(MarketSegmentHistory history) {
 		return new MarketSegmentDto(
@@ -21,11 +17,6 @@ public record MarketSegmentDto(
 				history.getMarketSegmentHistoryId(),
 				history.getMarketSegmentName(),
 				history.getMarketSegmentType(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }

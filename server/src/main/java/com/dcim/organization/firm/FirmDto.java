@@ -1,19 +1,15 @@
 package com.dcim.organization.firm;
 
-import java.time.Instant;
-import java.time.LocalDate;
+import com.dcim.asset.AuditSlice;
+import com.dcim.asset.AuditedDto;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public record FirmDto(
 		Long firmId,
 		Long firmHistoryId,
 		String firmName,
 		String parentFirmName,
-		LocalDate validFrom,
-		LocalDate validTo,
-		Instant appliedAt,
-		Long appliedBy,
-		String action,
-		String status) {
+		@JsonUnwrapped AuditSlice audit) implements AuditedDto {
 
 	static FirmDto from(FirmHistory history) {
 		return new FirmDto(
@@ -21,11 +17,6 @@ public record FirmDto(
 				history.getFirmHistoryId(),
 				history.getFirmName(),
 				history.getParentFirmName(),
-				history.getValidFrom(),
-				history.getValidTo(),
-				history.getAppliedAt(),
-				history.getAppliedBy(),
-				history.getAction(),
-				history.getStatus());
+				AuditSlice.from(history));
 	}
 }
