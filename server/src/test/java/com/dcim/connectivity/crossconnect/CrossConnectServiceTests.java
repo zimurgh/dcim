@@ -2,70 +2,29 @@ package com.dcim.connectivity.crossconnect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.dcim.organization.user.TestUsers;
-import com.dcim.organization.user.UserHistoryRepository;
-import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.workflow.AssetType;
-import com.dcim.workflow.ChangeAction;
 import com.dcim.workflow.ChangeDto;
-import com.dcim.workflow.ChangeService;
-import com.dcim.workflow.ChangeStage;
-import com.dcim.workflow.HistoryLinkRole;
+import com.dcim.workflow.ChangeTestSupport;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
-class CrossConnectServiceTests {
-
-	@Autowired
-	CrossConnectService crossConnects;
-
-	@Autowired
-	ChangeService changes;
-
-	@Autowired
-	UserIdentityRepository userIdentities;
-
-	@Autowired
-	UserHistoryRepository userHistory;
-
-	Long appliedBy;
-
-	@BeforeEach
-	void seedUser() {
-		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
-	}
+class CrossConnectServiceTests extends ChangeTestSupport {
 
 	@Test
 	void addsCrossConnectThroughChangeWorkflow() {
-		Seed seed = seedDependencies();
-		ChangeDto applied = applyAdd(
-				AssetType.CROSS_CONNECT,
-				xcPayload("XC-1", seed.crossConnectTypeId(), seed.latencyId(), seed.speedId(), seed.ownerFirmId(),
-						seed.billingFirmId(), seed.providerFirmId()));
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).singleElement().satisfies(link -> {
-			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
-			assertThat(link.assetType()).isEqualTo(AssetType.CROSS_CONNECT);
-		});
+		XcDeps deps = seedXcDeps();
+		Long providerFirmId = seedFirm(unique("Provider"));
+		ChangeDto applied = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
 		CrossConnectDto current = crossConnects.findCurrent(applied.assetIdentityId()).orElseThrow();
 		assertThat(current.crossConnectName()).isEqualTo("XC-1");
 		assertThat(current.circuitId()).isEqualTo("CKT-XC-1");
-		assertThat(current.crossConnectTypeId()).isEqualTo(seed.crossConnectTypeId());
-		assertThat(current.latencyId()).isEqualTo(seed.latencyId());
-		assertThat(current.speedId()).isEqualTo(seed.speedId());
-		assertThat(current.ownerFirmId()).isEqualTo(seed.ownerFirmId());
-		assertThat(current.billingFirmId()).isEqualTo(seed.billingFirmId());
-		assertThat(current.providerFirmId()).isEqualTo(seed.providerFirmId());
+		assertThat(current.crossConnectTypeId()).isEqualTo(deps.crossConnectTypeId());
+		assertThat(current.latencyId()).isEqualTo(deps.latencyId());
+		assertThat(current.speedId()).isEqualTo(deps.speedId());
+		assertThat(current.ownerFirmId()).isEqualTo(deps.ownerFirmId());
+		assertThat(current.billingFirmId()).isEqualTo(deps.billingFirmId());
+		assertThat(current.providerFirmId()).isEqualTo(providerFirmId);
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(crossConnects.history(applied.assetIdentityId())).hasSize(1);
@@ -73,51 +32,27 @@ class CrossConnectServiceTests {
 
 	@Test
 	void updatesCrossConnectThroughChangeWorkflow() {
-		Seed seed = seedDependencies();
-		Long otherBillingFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"BillingCo2\"}").assetIdentityId();
-		Long otherTypeId = applyAdd(
-				AssetType.CROSS_CONNECT_TYPE,
-				"{\"crossConnectTypeName\":\"Dark Fiber\"}")
-				.assetIdentityId();
-		Long ullId = applyAdd(
-				AssetType.LATENCY,
-				"{\"latencyName\":\"Ultra Low Latency\",\"latencyType\":\"ULL\"}")
-				.assetIdentityId();
-		Long speed10gId = applyAdd(
-				AssetType.SPEED,
-				"{\"speedName\":\"10 Gigabit\",\"speedType\":\"10G\"}")
-				.assetIdentityId();
+		XcDeps deps = seedXcDeps();
+		Long providerFirmId = seedFirm(unique("Provider"));
+		Long otherBillingFirmId = seedFirm(unique("Billing2"));
+		Long otherTypeId = seedCrossConnectType(unique("DarkFiber"));
+		Long ullId = seedLatency(unique("ULL"), "ULL");
+		Long speed10gId = seedSpeed(unique("10G"), "10G");
 
-		ChangeDto added = applyAdd(
-				AssetType.CROSS_CONNECT,
-				xcPayload("XC-1", seed.crossConnectTypeId(), seed.latencyId(), seed.speedId(), seed.ownerFirmId(),
-						seed.billingFirmId(), seed.providerFirmId()));
-		CrossConnectDto before = crossConnects.findCurrent(added.assetIdentityId()).orElseThrow();
+		ChangeDto added = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
-		ChangeDto draft = changes.createUntracked(
-				"{\"crossConnectName\":\"XC-1-REN\",\"circuitId\":\"CKT-XC-1B\",\"crossConnectTypeId\":" + otherTypeId
-						+ ",\"latencyId\":" + ullId
-						+ ",\"speedId\":" + speed10gId
-						+ ",\"ownerFirmId\":" + seed.ownerFirmId()
-						+ ",\"billingFirmId\":" + otherBillingFirmId
-						+ ",\"providerFirmId\":null}",
-				"tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
+		applyUpdateCurrent(
 				AssetType.CROSS_CONNECT,
-				ChangeAction.UPDATE,
 				added.assetIdentityId(),
-				before.crossConnectHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Update");
-
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
+				json(fields(
+						"crossConnectName", "XC-1-REN",
+						"circuitId", "CKT-XC-1B",
+						"crossConnectTypeId", otherTypeId,
+						"latencyId", ullId,
+						"speedId", speed10gId,
+						"ownerFirmId", deps.ownerFirmId(),
+						"billingFirmId", otherBillingFirmId,
+						"providerFirmId", null)));
 
 		CrossConnectDto current = crossConnects.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.crossConnectName()).isEqualTo("XC-1-REN");
@@ -134,96 +69,31 @@ class CrossConnectServiceTests {
 
 	@Test
 	void terminatesCrossConnectThroughChangeWorkflow() {
-		Seed seed = seedDependencies();
-		ChangeDto added = applyAdd(
-				AssetType.CROSS_CONNECT,
-				xcPayload("XC-1", seed.crossConnectTypeId(), seed.latencyId(), seed.speedId(), seed.ownerFirmId(),
-						seed.billingFirmId(), seed.providerFirmId()));
-		CrossConnectDto before = crossConnects.findCurrent(added.assetIdentityId()).orElseThrow();
+		XcDeps deps = seedXcDeps();
+		Long providerFirmId = seedFirm(unique("Provider"));
+		ChangeDto added = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
-		ChangeDto draft = changes.createUntracked("{}", "tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
-				AssetType.CROSS_CONNECT,
-				ChangeAction.TERMINATE,
-				added.assetIdentityId(),
-				before.crossConnectHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Terminate");
-
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Terminated");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
+		applyTerminateCurrent(AssetType.CROSS_CONNECT, added.assetIdentityId());
 
 		CrossConnectDto current = crossConnects.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");
 		assertThat(current.action()).isEqualTo("TERMINATE");
 		assertThat(current.crossConnectName()).isEqualTo("XC-1");
 		assertThat(current.circuitId()).isEqualTo("CKT-XC-1");
-		assertThat(current.crossConnectTypeId()).isEqualTo(seed.crossConnectTypeId());
+		assertThat(current.crossConnectTypeId()).isEqualTo(deps.crossConnectTypeId());
 		assertThat(crossConnects.history(added.assetIdentityId())).hasSize(2);
 		assertThat(crossConnects.history(added.assetIdentityId()).getFirst().validTo()).isNotNull();
 	}
 
-	private Seed seedDependencies() {
-		Long ownerFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"OwnerCo\"}").assetIdentityId();
-		Long billingFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"BillingCo\"}").assetIdentityId();
-		Long providerFirmId = applyAdd(AssetType.FIRM, "{\"firmName\":\"ProviderCo\"}").assetIdentityId();
-		Long crossConnectTypeId = applyAdd(
-				AssetType.CROSS_CONNECT_TYPE,
-				"{\"crossConnectTypeName\":\"Single Mode Fiber\"}")
-				.assetIdentityId();
-		Long latencyId = applyAdd(
-				AssetType.LATENCY,
-				"{\"latencyName\":\"Low Latency\",\"latencyType\":\"LL\"}")
-				.assetIdentityId();
-		Long speedId = applyAdd(
-				AssetType.SPEED,
-				"{\"speedName\":\"1 Gigabit\",\"speedType\":\"1G\"}")
-				.assetIdentityId();
-		return new Seed(ownerFirmId, billingFirmId, providerFirmId, crossConnectTypeId, latencyId, speedId);
-	}
-
-	private static String xcPayload(
-			String name,
-			Long crossConnectTypeId,
-			Long latencyId,
-			Long speedId,
-			Long ownerFirmId,
-			Long billingFirmId,
-			Long providerFirmId) {
-		return "{\"crossConnectName\":\"" + name + "\",\"circuitId\":\"CKT-" + name
-				+ "\",\"crossConnectTypeId\":" + crossConnectTypeId
-				+ ",\"latencyId\":" + latencyId
-				+ ",\"speedId\":" + speedId
-				+ ",\"ownerFirmId\":" + ownerFirmId
-				+ ",\"billingFirmId\":" + billingFirmId
-				+ ",\"providerFirmId\":" + providerFirmId + "}";
-	}
-
-	private ChangeDto applyAdd(AssetType assetType, String payload) {
-		ChangeDto draft = changes.createUntracked(payload, "tester");
-		changes.promoteToStaged(
-				draft.changeId(),
-				assetType,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		return changes.applyStaged(draft.changeId(), appliedBy);
-	}
-
-	private record Seed(
-			Long ownerFirmId,
-			Long billingFirmId,
-			Long providerFirmId,
-			Long crossConnectTypeId,
-			Long latencyId,
-			Long speedId) {
+	private String xcWithProvider(String name, String circuitId, XcDeps deps, Long providerFirmId) {
+		return json(fields(
+				"crossConnectName", name,
+				"circuitId", circuitId,
+				"crossConnectTypeId", deps.crossConnectTypeId(),
+				"latencyId", deps.latencyId(),
+				"speedId", deps.speedId(),
+				"ownerFirmId", deps.ownerFirmId(),
+				"billingFirmId", deps.billingFirmId(),
+				"providerFirmId", providerFirmId));
 	}
 }

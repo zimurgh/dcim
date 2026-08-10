@@ -4,44 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 
 import com.dcim.workflow.AssetType;
-import com.dcim.workflow.ChangeAction;
-import com.dcim.workflow.ChangeDto;
-import com.dcim.workflow.ChangeService;
-import com.dcim.workflow.ChangeStage;
-import com.dcim.workflow.HistoryLinkRole;
+import com.dcim.workflow.ChangeTestSupport;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
-class UserServiceTests {
-
-	@Autowired
-	UserService users;
+class UserServiceTests extends ChangeTestSupport {
 
 	@Autowired
 	UserIdentityRepository identities;
 
 	@Autowired
 	UserHistoryRepository history;
-
-	@Autowired
-	ChangeService changes;
-
-	Long appliedBy;
-
-	@BeforeEach
-	void seedApplier() {
-		appliedBy = TestUsers.seed(identities, history, "tester", true);
-	}
 
 	@Test
 	void listsAndLoadsCurrentUser() {
@@ -73,75 +50,43 @@ class UserServiceTests {
 
 	@Test
 	void addsUserThroughChangeWorkflow() {
-		ChangeDto draft = changes.createUntracked(
-				"{\"userName\":\"bob\",\"isInitiator\":true}",
-				"tester");
-		assertThat(draft.stage()).isEqualTo(ChangeStage.UNTRACKED);
-
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
+		Long userId = applyAdd(
 				AssetType.USER,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Add");
+				json(Map.of("userName", "bob", "isInitiator", true)))
+				.assetIdentityId();
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).singleElement().satisfies(link -> {
-			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
-			assertThat(link.assetType()).isEqualTo(AssetType.USER);
-		});
-
-		UserDto current = users.findCurrent(applied.assetIdentityId()).orElseThrow();
+		UserDto current = users.findCurrent(userId).orElseThrow();
 		assertThat(current.userName()).isEqualTo("bob");
 		assertThat(current.isInitiator()).isTrue();
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(current.appliedBy()).isEqualTo(appliedBy);
 		assertThat(current.validTo()).isNull();
-		assertThat(users.history(applied.assetIdentityId())).hasSize(1);
+		assertThat(users.history(userId)).hasSize(1);
 		assertThat(users.listCurrent()).extracting(UserDto::userName).contains("bob");
 	}
 
 	@Test
 	void updatesUserThroughChangeWorkflow() {
-		ChangeDto added = applyAdd("{\"userName\":\"bob\",\"isInitiator\":false}");
-		UserDto before = users.findCurrent(added.assetIdentityId()).orElseThrow();
-
-		ChangeDto draft = changes.createUntracked(
-				"{\"userName\":\"robert\",\"isInitiator\":true}",
-				"tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
+		Long userId = applyAdd(
 				AssetType.USER,
-				ChangeAction.UPDATE,
-				added.assetIdentityId(),
-				before.userHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Update");
+				json(Map.of("userName", "bob", "isInitiator", false)))
+				.assetIdentityId();
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
+		applyUpdateCurrent(
+				AssetType.USER,
+				userId,
+				json(Map.of("userName", "robert", "isInitiator", true)));
 
-		UserDto current = users.findCurrent(added.assetIdentityId()).orElseThrow();
+		UserDto current = users.findCurrent(userId).orElseThrow();
 		assertThat(current.userName()).isEqualTo("robert");
 		assertThat(current.isInitiator()).isTrue();
 		assertThat(current.action()).isEqualTo("UPDATE");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(current.validTo()).isNull();
 
-		assertThat(users.history(added.assetIdentityId())).hasSize(2);
-		assertThat(users.history(added.assetIdentityId()).getFirst()).satisfies(prior -> {
+		assertThat(users.history(userId)).hasSize(2);
+		assertThat(users.history(userId).getFirst()).satisfies(prior -> {
 			assertThat(prior.userName()).isEqualTo("bob");
 			assertThat(prior.isInitiator()).isFalse();
 			assertThat(prior.validTo()).isNotNull();
@@ -150,48 +95,21 @@ class UserServiceTests {
 
 	@Test
 	void terminatesUserThroughChangeWorkflow() {
-		ChangeDto added = applyAdd("{\"userName\":\"bob\",\"isInitiator\":true}");
-		UserDto before = users.findCurrent(added.assetIdentityId()).orElseThrow();
-
-		ChangeDto draft = changes.createUntracked("{}", "tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
+		Long userId = applyAdd(
 				AssetType.USER,
-				ChangeAction.TERMINATE,
-				added.assetIdentityId(),
-				before.userHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Terminate");
+				json(Map.of("userName", "bob", "isInitiator", true)))
+				.assetIdentityId();
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Terminated");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
+		applyTerminateCurrent(AssetType.USER, userId);
 
-		UserDto current = users.findCurrent(added.assetIdentityId()).orElseThrow();
+		UserDto current = users.findCurrent(userId).orElseThrow();
 		assertThat(current.userName()).isEqualTo("bob");
 		assertThat(current.isInitiator()).isTrue();
 		assertThat(current.action()).isEqualTo("TERMINATE");
 		assertThat(current.status()).isEqualTo("Terminated");
 		assertThat(current.validTo()).isNull();
 
-		assertThat(users.history(added.assetIdentityId())).hasSize(2);
-		assertThat(users.history(added.assetIdentityId()).getFirst().validTo()).isNotNull();
-	}
-
-	private ChangeDto applyAdd(String payload) {
-		ChangeDto draft = changes.createUntracked(payload, "tester");
-		changes.promoteToStaged(
-				draft.changeId(),
-				AssetType.USER,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		return changes.applyStaged(draft.changeId(), appliedBy);
+		assertThat(users.history(userId)).hasSize(2);
+		assertThat(users.history(userId).getFirst().validTo()).isNotNull();
 	}
 }

@@ -2,82 +2,36 @@ package com.dcim.site.rack;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.dcim.organization.user.TestUsers;
-import com.dcim.organization.user.UserHistoryRepository;
-import com.dcim.organization.user.UserIdentityRepository;
-import com.dcim.workflow.AssetType;
-import com.dcim.workflow.ChangeAction;
-import com.dcim.workflow.ChangeDto;
-import com.dcim.workflow.ChangeService;
+import com.dcim.workflow.ChangeTestSupport;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
-class RackViewTests {
-
-	@Autowired
-	ChangeService changes;
+class RackViewTests extends ChangeTestSupport {
 
 	@Autowired
 	RackViewRepository rackViews;
 
-	@Autowired
-	UserIdentityRepository userIdentities;
-
-	@Autowired
-	UserHistoryRepository userHistory;
-
-	Long appliedBy;
-
-	@BeforeEach
-	void seedUser() {
-		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
-	}
-
 	@Test
 	void flattensCageAndDataCenterNames() {
-		ChangeDto dataCenter = applyAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"NY4\"}");
-		ChangeDto cage = applyAdd(
-				AssetType.CAGE,
-				"{\"cageName\":\"Cage-A\",\"dataCenterId\":" + dataCenter.assetIdentityId() + "}");
-		ChangeDto rack = applyAdd(
-				AssetType.RACK,
-				"{\"rackName\":\"R01\",\"cageId\":" + cage.assetIdentityId() + "}");
+		Long dataCenterId = seedDataCenter("NY4");
+		Long cageId = seedCage("Cage-A", dataCenterId);
+		Long rackId = seedRack("R01", cageId);
 
-		RackView view = rackViews.findCurrentByRackId(rack.assetIdentityId()).orElseThrow();
-		assertThat(view.getRackId()).isEqualTo(rack.assetIdentityId());
+		RackView view = rackViews.findCurrentByRackId(rackId).orElseThrow();
+		assertThat(view.getRackId()).isEqualTo(rackId);
 		assertThat(view.getRackName()).isEqualTo("R01");
-		assertThat(view.getCageId()).isEqualTo(cage.assetIdentityId());
+		assertThat(view.getCageId()).isEqualTo(cageId);
 		assertThat(view.getCageName()).isEqualTo("Cage-A");
-		assertThat(view.getDataCenterId()).isEqualTo(dataCenter.assetIdentityId());
+		assertThat(view.getDataCenterId()).isEqualTo(dataCenterId);
 		assertThat(view.getDataCenterName()).isEqualTo("NY4");
 		assertThat(view.getStatus()).isEqualTo("Active");
 
-		assertThat(rackViews.findCurrentByCageId(cage.assetIdentityId()))
+		assertThat(rackViews.findCurrentByCageId(cageId))
 				.extracting(RackView::getRackName)
 				.containsExactly("R01");
-		assertThat(rackViews.findCurrentByDataCenterId(dataCenter.assetIdentityId()))
+		assertThat(rackViews.findCurrentByDataCenterId(dataCenterId))
 				.extracting(RackView::getCageName)
 				.containsExactly("Cage-A");
-	}
-
-	private ChangeDto applyAdd(AssetType assetType, String payload) {
-		ChangeDto draft = changes.createUntracked(payload, "tester");
-		changes.promoteToStaged(
-				draft.changeId(),
-				assetType,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		return changes.applyStaged(draft.changeId(), appliedBy);
 	}
 }

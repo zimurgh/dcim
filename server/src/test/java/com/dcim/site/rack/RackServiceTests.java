@@ -4,33 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 
-import com.dcim.organization.user.TestUsers;
-import com.dcim.organization.user.UserHistoryRepository;
-import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.site.cage.CageIdentity;
 import com.dcim.site.cage.CageIdentityRepository;
 import com.dcim.workflow.AssetType;
-import com.dcim.workflow.ChangeAction;
-import com.dcim.workflow.ChangeDto;
-import com.dcim.workflow.ChangeService;
-import com.dcim.workflow.ChangeStage;
-import com.dcim.workflow.HistoryLinkRole;
+import com.dcim.workflow.ChangeTestSupport;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
-class RackServiceTests {
-
-	@Autowired
-	RackService racks;
+class RackServiceTests extends ChangeTestSupport {
 
 	@Autowired
 	RackIdentityRepository rackIdentities;
@@ -40,22 +24,6 @@ class RackServiceTests {
 
 	@Autowired
 	CageIdentityRepository cageIdentities;
-
-	@Autowired
-	ChangeService changes;
-
-	@Autowired
-	UserIdentityRepository userIdentities;
-
-	@Autowired
-	UserHistoryRepository userHistory;
-
-	Long appliedBy;
-
-	@BeforeEach
-	void seedUser() {
-		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
-	}
 
 	@Test
 	void listsAndLoadsCurrentRackUnderCage() {
@@ -88,80 +56,38 @@ class RackServiceTests {
 
 	@Test
 	void addsRackThroughChangeWorkflow() {
-		Long cageId = seedCage();
+		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
 
-		ChangeDto draft = changes.createUntracked(
-				"{\"rackName\":\"R01\",\"cageId\":" + cageId + "}",
-				"tester");
-		assertThat(draft.stage()).isEqualTo(ChangeStage.UNTRACKED);
+		Long rackId = applyAdd(AssetType.RACK, json(Map.of("rackName", "R01", "cageId", cageId)))
+				.assetIdentityId();
 
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
-				AssetType.RACK,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Add");
-
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).singleElement().satisfies(link -> {
-			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
-			assertThat(link.assetType()).isEqualTo(AssetType.RACK);
-		});
-
-		RackDto current = racks.findCurrent(applied.assetIdentityId()).orElseThrow();
+		RackDto current = racks.findCurrent(rackId).orElseThrow();
 		assertThat(current.rackName()).isEqualTo("R01");
 		assertThat(current.cageId()).isEqualTo(cageId);
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(current.appliedBy()).isEqualTo(appliedBy);
 		assertThat(current.validTo()).isNull();
-		assertThat(racks.history(applied.assetIdentityId())).hasSize(1);
+		assertThat(racks.history(rackId)).hasSize(1);
 		assertThat(racks.listCurrentByCage(cageId)).extracting(RackDto::rackName).contains("R01");
 	}
 
 	@Test
 	void updatesRackThroughChangeWorkflow() {
-		Long cageId = seedCage();
-		ChangeDto added = applyAdd(
-				AssetType.RACK,
-				"{\"rackName\":\"R01\",\"cageId\":" + cageId + "}");
-		RackDto before = racks.findCurrent(added.assetIdentityId()).orElseThrow();
+		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
+		Long rackId = seedRack("R01", cageId);
 
-		ChangeDto draft = changes.createUntracked(
-				"{\"rackName\":\"R02\",\"cageId\":" + cageId + "}",
-				"tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
-				AssetType.RACK,
-				ChangeAction.UPDATE,
-				added.assetIdentityId(),
-				before.rackHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Update");
+		applyUpdateCurrent(AssetType.RACK, rackId, json(Map.of("rackName", "R02", "cageId", cageId)));
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Active");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
-
-		RackDto current = racks.findCurrent(added.assetIdentityId()).orElseThrow();
+		RackDto current = racks.findCurrent(rackId).orElseThrow();
 		assertThat(current.rackName()).isEqualTo("R02");
 		assertThat(current.cageId()).isEqualTo(cageId);
 		assertThat(current.action()).isEqualTo("UPDATE");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(current.validTo()).isNull();
 
-		assertThat(racks.history(added.assetIdentityId())).hasSize(2);
-		assertThat(racks.history(added.assetIdentityId()).getFirst()).satisfies(prior -> {
+		assertThat(racks.history(rackId)).hasSize(2);
+		assertThat(racks.history(rackId).getFirst()).satisfies(prior -> {
 			assertThat(prior.rackName()).isEqualTo("R01");
 			assertThat(prior.validTo()).isNotNull();
 		});
@@ -169,59 +95,19 @@ class RackServiceTests {
 
 	@Test
 	void terminatesRackThroughChangeWorkflow() {
-		Long cageId = seedCage();
-		ChangeDto added = applyAdd(
-				AssetType.RACK,
-				"{\"rackName\":\"R01\",\"cageId\":" + cageId + "}");
-		RackDto before = racks.findCurrent(added.assetIdentityId()).orElseThrow();
+		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
+		Long rackId = seedRack("R01", cageId);
 
-		ChangeDto draft = changes.createUntracked("{}", "tester");
-		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(),
-				AssetType.RACK,
-				ChangeAction.TERMINATE,
-				added.assetIdentityId(),
-				before.rackHistoryId(),
-				null,
-				"tester");
-		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
-		assertThat(staged.statusLabel()).isEqualTo("Pending Terminate");
+		applyTerminateCurrent(AssetType.RACK, rackId);
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
-		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertThat(applied.statusLabel()).isEqualTo("Terminated");
-		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
-				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
-
-		RackDto current = racks.findCurrent(added.assetIdentityId()).orElseThrow();
+		RackDto current = racks.findCurrent(rackId).orElseThrow();
 		assertThat(current.rackName()).isEqualTo("R01");
 		assertThat(current.cageId()).isEqualTo(cageId);
 		assertThat(current.action()).isEqualTo("TERMINATE");
 		assertThat(current.status()).isEqualTo("Terminated");
 		assertThat(current.validTo()).isNull();
 
-		assertThat(racks.history(added.assetIdentityId())).hasSize(2);
-		assertThat(racks.history(added.assetIdentityId()).getFirst().validTo()).isNotNull();
-	}
-
-	private Long seedCage() {
-		ChangeDto dataCenter = applyAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"NY4\"}");
-		return applyAdd(
-				AssetType.CAGE,
-				"{\"cageName\":\"Cage-A\",\"dataCenterId\":" + dataCenter.assetIdentityId() + "}")
-				.assetIdentityId();
-	}
-
-	private ChangeDto applyAdd(AssetType assetType, String payload) {
-		ChangeDto draft = changes.createUntracked(payload, "tester");
-		changes.promoteToStaged(
-				draft.changeId(),
-				assetType,
-				ChangeAction.ADD,
-				null,
-				null,
-				null,
-				"tester");
-		return changes.applyStaged(draft.changeId(), appliedBy);
+		assertThat(racks.history(rackId)).hasSize(2);
+		assertThat(racks.history(rackId).getFirst().validTo()).isNotNull();
 	}
 }
