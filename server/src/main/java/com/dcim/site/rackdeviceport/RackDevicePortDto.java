@@ -7,11 +7,12 @@ public record RackDevicePortDto(
 		Long rackDevicePortId,
 		Long rackDevicePortHistoryId,
 		Long rackDeviceId,
+		Long rackDevicePortTypeId,
 		String rackDevicePortName,
 		LocalDate validFrom,
 		LocalDate validTo,
 		Instant appliedAt,
-		String appliedBy,
+		Long appliedBy,
 		String action,
 		String status) {
 
@@ -20,6 +21,7 @@ public record RackDevicePortDto(
 				history.getRackDevicePortId(),
 				history.getRackDevicePortHistoryId(),
 				history.getRackDeviceId(),
+				history.getRackDevicePortTypeId(),
 				history.getRackDevicePortName(),
 				history.getValidFrom(),
 				history.getValidTo(),

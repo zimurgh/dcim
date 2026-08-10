@@ -11,6 +11,8 @@ import com.dcim.asset.AssetHistoryLink;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.site.rackdevice.RackDeviceIdentity;
 import com.dcim.site.rackdevice.RackDeviceIdentityRepository;
+import com.dcim.site.rackdeviceporttype.RackDevicePortTypeIdentity;
+import com.dcim.site.rackdeviceporttype.RackDevicePortTypeIdentityRepository;
 
 import org.springframework.stereotype.Component;
 
@@ -22,16 +24,19 @@ class RackDevicePortAssetChangeApplier implements AssetChangeApplier {
 	private final RackDevicePortIdentityRepository identities;
 	private final RackDevicePortHistoryRepository history;
 	private final RackDeviceIdentityRepository devices;
+	private final RackDevicePortTypeIdentityRepository portTypes;
 	private final JsonPayloads payloads;
 
 	RackDevicePortAssetChangeApplier(
 			RackDevicePortIdentityRepository identities,
 			RackDevicePortHistoryRepository history,
 			RackDeviceIdentityRepository devices,
+			RackDevicePortTypeIdentityRepository portTypes,
 			JsonPayloads payloads) {
 		this.identities = identities;
 		this.history = history;
 		this.devices = devices;
+		this.portTypes = portTypes;
 		this.payloads = payloads;
 	}
 
@@ -55,10 +60,13 @@ class RackDevicePortAssetChangeApplier implements AssetChangeApplier {
 		String name = JsonPayloads.requiredText(body, "rackDevicePortName");
 		RackDeviceIdentity device = devices.findById(JsonPayloads.requiredLong(body, "rackDeviceId"))
 				.orElseThrow(() -> new AssetApplyException("Rack device not found for port add"));
+		RackDevicePortTypeIdentity portType = requirePortType(
+				JsonPayloads.requiredLong(body, "rackDevicePortTypeId"));
 		RackDevicePortIdentity identity = identities.saveAndFlush(new RackDevicePortIdentity());
 		RackDevicePortHistory created = history.saveAndFlush(new RackDevicePortHistory(
 				identity,
 				device,
+				portType,
 				name,
 				command.validOn(),
 				null,
@@ -79,10 +87,14 @@ class RackDevicePortAssetChangeApplier implements AssetChangeApplier {
 				? devices.findById(JsonPayloads.requiredLong(body, "rackDeviceId"))
 						.orElseThrow(() -> new AssetApplyException("Rack device not found for port update"))
 				: prior.getRackDeviceIdentity();
+		RackDevicePortTypeIdentity portType = body.hasNonNull("rackDevicePortTypeId")
+				? requirePortType(JsonPayloads.requiredLong(body, "rackDevicePortTypeId"))
+				: prior.getRackDevicePortTypeIdentity();
 		prior.close(command.validOn());
 		RackDevicePortHistory created = history.saveAndFlush(new RackDevicePortHistory(
 				prior.getRackDevicePortIdentity(),
 				device,
+				portType,
 				name,
 				command.validOn(),
 				null,
@@ -99,6 +111,7 @@ class RackDevicePortAssetChangeApplier implements AssetChangeApplier {
 		RackDevicePortHistory created = history.saveAndFlush(new RackDevicePortHistory(
 				prior.getRackDevicePortIdentity(),
 				prior.getRackDeviceIdentity(),
+				prior.getRackDevicePortTypeIdentity(),
 				prior.getRackDevicePortName(),
 				command.validOn(),
 				null,
@@ -107,6 +120,12 @@ class RackDevicePortAssetChangeApplier implements AssetChangeApplier {
 				command.action(),
 				command.committedStatus()));
 		return result(prior, created);
+	}
+
+	private RackDevicePortTypeIdentity requirePortType(Long rackDevicePortTypeId) {
+		return portTypes.findById(rackDevicePortTypeId)
+				.orElseThrow(() -> new AssetApplyException(
+						"Rack device port type not found: " + rackDevicePortTypeId));
 	}
 
 	private RackDevicePortHistory requireCurrentBase(AssetApplyCommand command) {

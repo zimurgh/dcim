@@ -2,11 +2,15 @@ package com.dcim.site.cage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.dcim.organization.user.TestUsers;
+import com.dcim.organization.user.UserHistoryRepository;
+import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeAction;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +27,19 @@ class CageViewTests {
 
 	@Autowired
 	CageViewRepository cageViews;
+
+	@Autowired
+	UserIdentityRepository userIdentities;
+
+	@Autowired
+	UserHistoryRepository userHistory;
+
+	Long appliedBy;
+
+	@BeforeEach
+	void seedUser() {
+		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
 
 	@Test
 	void exposesDataCenterNameInsteadOfIdentity() {
@@ -43,6 +60,7 @@ class CageViewTests {
 		assertThat(view.getDataCenterId()).isEqualTo(dataCenter.assetIdentityId());
 		assertThat(view.getDataCenterName()).isEqualTo("NY4");
 		assertThat(view.getStatus()).isEqualTo("Active");
+		assertThat(view.getAppliedBy()).isEqualTo(appliedBy);
 
 		assertThat(cageViews.findCurrentCages()).extracting(CageView::getDataCenterName).contains("NY4");
 		assertThat(cageViews.findCurrentByDataCenterId(dataCenter.assetIdentityId()))
@@ -60,6 +78,6 @@ class CageViewTests {
 				baseHistoryId,
 				null,
 				"tester");
-		return changes.applyStaged(draft.changeId(), "tester");
+		return changes.applyStaged(draft.changeId(), appliedBy);
 	}
 }

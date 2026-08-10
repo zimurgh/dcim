@@ -36,7 +36,7 @@ public class FirmHistory extends AuditHistory {
 			LocalDate validFrom,
 			LocalDate validTo,
 			Instant appliedAt,
-			String appliedBy,
+			Long appliedBy,
 			String action,
 			String status) {
 		super(validFrom, validTo, appliedAt, appliedBy, action, status);

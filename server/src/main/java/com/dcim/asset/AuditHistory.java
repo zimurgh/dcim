@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 
 /**
  * Shared temporal / audit columns for append-only asset history rows.
+ * {@code appliedBy} is the applying user's stable id ({@code T_USER_IDENTITY.USER_ID}).
  */
 @MappedSuperclass
 public abstract class AuditHistory {
@@ -20,8 +21,8 @@ public abstract class AuditHistory {
 	@Column(name = "APPLIED_AT", nullable = false)
 	private Instant appliedAt;
 
-	@Column(name = "APPLIED_BY", length = 50)
-	private String appliedBy;
+	@Column(name = "APPLIED_BY")
+	private Long appliedBy;
 
 	@Column(name = "ACTION", length = 50)
 	private String action;
@@ -36,7 +37,7 @@ public abstract class AuditHistory {
 			LocalDate validFrom,
 			LocalDate validTo,
 			Instant appliedAt,
-			String appliedBy,
+			Long appliedBy,
 			String action,
 			String status) {
 		this.validFrom = validFrom;
@@ -59,7 +60,7 @@ public abstract class AuditHistory {
 		return appliedAt;
 	}
 
-	public String getAppliedBy() {
+	public Long getAppliedBy() {
 		return appliedBy;
 	}
 

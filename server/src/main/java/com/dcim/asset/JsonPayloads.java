@@ -47,4 +47,23 @@ public class JsonPayloads {
 		}
 		return node.asLong();
 	}
+
+	public static Long longOrNull(JsonNode body, String field) {
+		JsonNode node = body.get(field);
+		if (node == null || node.isNull()) {
+			return null;
+		}
+		if (!node.canConvertToLong()) {
+			throw new AssetApplyException("Payload field " + field + " must be a number");
+		}
+		return node.asLong();
+	}
+
+	public static boolean booleanOrDefault(JsonNode body, String field, boolean defaultValue) {
+		JsonNode node = body.get(field);
+		if (node == null || node.isNull()) {
+			return defaultValue;
+		}
+		return node.asBoolean();
+	}
 }

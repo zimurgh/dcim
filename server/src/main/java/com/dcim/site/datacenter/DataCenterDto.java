@@ -10,7 +10,7 @@ public record DataCenterDto(
 		LocalDate validFrom,
 		LocalDate validTo,
 		Instant appliedAt,
-		String appliedBy,
+		Long appliedBy,
 		String action,
 		String status) {
 

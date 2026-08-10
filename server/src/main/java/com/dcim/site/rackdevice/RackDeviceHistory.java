@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import com.dcim.asset.AuditHistory;
 import com.dcim.site.rack.RackIdentity;
+import com.dcim.site.rackdevicetype.RackDeviceTypeIdentity;
 
 import jakarta.persistence.*;
 
@@ -25,6 +26,10 @@ public class RackDeviceHistory extends AuditHistory {
 	@JoinColumn(name = "RACK_ID", nullable = false)
 	private RackIdentity rackIdentity;
 
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	@JoinColumn(name = "RACK_DEVICE_TYPE_ID", nullable = false)
+	private RackDeviceTypeIdentity rackDeviceTypeIdentity;
+
 	@Column(name = "RACK_DEVICE_NAME", nullable = false, length = 50)
 	private String rackDeviceName;
 
@@ -34,16 +39,18 @@ public class RackDeviceHistory extends AuditHistory {
 	public RackDeviceHistory(
 			RackDeviceIdentity rackDeviceIdentity,
 			RackIdentity rackIdentity,
+			RackDeviceTypeIdentity rackDeviceTypeIdentity,
 			String rackDeviceName,
 			LocalDate validFrom,
 			LocalDate validTo,
 			Instant appliedAt,
-			String appliedBy,
+			Long appliedBy,
 			String action,
 			String status) {
 		super(validFrom, validTo, appliedAt, appliedBy, action, status);
 		this.rackDeviceIdentity = rackDeviceIdentity;
 		this.rackIdentity = rackIdentity;
+		this.rackDeviceTypeIdentity = rackDeviceTypeIdentity;
 		this.rackDeviceName = rackDeviceName;
 	}
 
@@ -65,6 +72,14 @@ public class RackDeviceHistory extends AuditHistory {
 
 	public Long getRackId() {
 		return rackIdentity.getRackId();
+	}
+
+	public RackDeviceTypeIdentity getRackDeviceTypeIdentity() {
+		return rackDeviceTypeIdentity;
+	}
+
+	public Long getRackDeviceTypeId() {
+		return rackDeviceTypeIdentity.getRackDeviceTypeId();
 	}
 
 	public String getRackDeviceName() {

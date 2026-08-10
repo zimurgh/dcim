@@ -69,7 +69,7 @@ class ChangeSpecController {
 
 	@PostMapping("/{changeSpecId}/apply")
 	ChangeSpecDto apply(@PathVariable Long changeSpecId, @RequestBody ApplySpecRequest request) {
-		return wrap(() -> specs.apply(changeSpecId, request.actor()));
+		return wrap(() -> specs.apply(changeSpecId, request.appliedBy()));
 	}
 
 	@PostMapping("/{changeSpecId}/cancel")
@@ -95,6 +95,6 @@ class ChangeSpecController {
 	record LinkChrecRequest(String jiraKey, String title, String url) {
 	}
 
-	record ApplySpecRequest(String actor) {
+	record ApplySpecRequest(Long appliedBy) {
 	}
 }

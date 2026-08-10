@@ -51,7 +51,7 @@ class ChangeController {
 
 	@PostMapping("/{changeId}/apply")
 	ChangeDto apply(@PathVariable Long changeId, @RequestBody ApplyRequest request) {
-		return wrap(() -> changes.applyStaged(changeId, request.actor()));
+		return wrap(() -> changes.applyStaged(changeId, request.appliedBy()));
 	}
 
 	@DeleteMapping("/{changeId}")
@@ -89,6 +89,6 @@ class ChangeController {
 			String actor) {
 	}
 
-	record ApplyRequest(String actor) {
+	record ApplyRequest(Long appliedBy) {
 	}
 }

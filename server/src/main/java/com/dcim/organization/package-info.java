@@ -1,5 +1,5 @@
 /**
- * Organizational / commercial parties (firms, and later related concepts).
+ * Organizational / commercial parties (firms, users, exchanges, market segments, and later related concepts).
  */
 @org.springframework.modulith.ApplicationModule(
 		displayName = "Organization",

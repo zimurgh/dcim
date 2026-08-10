@@ -31,8 +31,8 @@ public class ChangeCommitted {
 	@Column(name = "APPLIED_AT", nullable = false)
 	private Instant appliedAt;
 
-	@Column(name = "APPLIED_BY", length = 50)
-	private String appliedBy;
+	@Column(name = "APPLIED_BY")
+	private Long appliedBy;
 
 	protected ChangeCommitted() {
 	}
@@ -43,7 +43,7 @@ public class ChangeCommitted {
 			AssetType assetType,
 			ChangeAction action,
 			Instant appliedAt,
-			String appliedBy) {
+			Long appliedBy) {
 		this.changeIdentity = changeIdentity;
 		this.changeId = changeIdentity.getChangeId();
 		this.payload = payload;
@@ -77,7 +77,7 @@ public class ChangeCommitted {
 		return appliedAt;
 	}
 
-	public String getAppliedBy() {
+	public Long getAppliedBy() {
 		return appliedBy;
 	}
 }

@@ -36,7 +36,7 @@ class FirmServiceTests {
 				LocalDate.of(2026, 1, 1),
 				null,
 				Instant.parse("2026-01-01T12:00:00Z"),
-				"tester",
+				null,
 				"implement",
 				null));
 

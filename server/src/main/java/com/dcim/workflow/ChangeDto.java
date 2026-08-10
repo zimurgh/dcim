@@ -15,6 +15,7 @@ public record ChangeDto(
 		Long payloadId,
 		Instant createdOrStagedAt,
 		String actor,
+		Long appliedBy,
 		List<HistoryLinkDto> historyLinks) {
 
 	public record HistoryLinkDto(AssetType assetType, Long historyId, HistoryLinkRole role) {
@@ -33,6 +34,7 @@ public record ChangeDto(
 				row.getPayload().getChangePayloadId(),
 				row.getCreatedAt(),
 				row.getCreatedBy(),
+				null,
 				List.of());
 	}
 
@@ -49,6 +51,7 @@ public record ChangeDto(
 				row.getPayload().getChangePayloadId(),
 				row.getStagedAt(),
 				row.getStagedBy(),
+				null,
 				List.of());
 	}
 
@@ -68,6 +71,7 @@ public record ChangeDto(
 				null,
 				row.getPayload().getChangePayloadId(),
 				row.getAppliedAt(),
+				null,
 				row.getAppliedBy(),
 				links);
 	}

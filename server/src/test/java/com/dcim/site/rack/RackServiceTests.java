@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import com.dcim.organization.user.TestUsers;
+import com.dcim.organization.user.UserHistoryRepository;
+import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.site.cage.CageIdentity;
 import com.dcim.site.cage.CageIdentityRepository;
 import com.dcim.workflow.AssetType;
@@ -14,6 +17,7 @@ import com.dcim.workflow.ChangeService;
 import com.dcim.workflow.ChangeStage;
 import com.dcim.workflow.HistoryLinkRole;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +44,19 @@ class RackServiceTests {
 	@Autowired
 	ChangeService changes;
 
+	@Autowired
+	UserIdentityRepository userIdentities;
+
+	@Autowired
+	UserHistoryRepository userHistory;
+
+	Long appliedBy;
+
+	@BeforeEach
+	void seedUser() {
+		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
+
 	@Test
 	void listsAndLoadsCurrentRackUnderCage() {
 		CageIdentity cage = cageIdentities.save(new CageIdentity());
@@ -52,7 +69,7 @@ class RackServiceTests {
 				LocalDate.of(2026, 1, 1),
 				null,
 				Instant.parse("2026-01-01T12:00:00Z"),
-				"tester",
+				appliedBy,
 				"implement",
 				null));
 
@@ -89,7 +106,7 @@ class RackServiceTests {
 		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
 		assertThat(staged.statusLabel()).isEqualTo("Pending Add");
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), "tester");
+		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
 		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(applied.statusLabel()).isEqualTo("Active");
 		assertThat(applied.historyLinks()).singleElement().satisfies(link -> {
@@ -102,6 +119,7 @@ class RackServiceTests {
 		assertThat(current.cageId()).isEqualTo(cageId);
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(current.status()).isEqualTo("Active");
+		assertThat(current.appliedBy()).isEqualTo(appliedBy);
 		assertThat(current.validTo()).isNull();
 		assertThat(racks.history(applied.assetIdentityId())).hasSize(1);
 		assertThat(racks.listCurrentByCage(cageId)).extracting(RackDto::rackName).contains("R01");
@@ -129,7 +147,7 @@ class RackServiceTests {
 		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
 		assertThat(staged.statusLabel()).isEqualTo("Pending Update");
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), "tester");
+		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
 		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(applied.statusLabel()).isEqualTo("Active");
 		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
@@ -169,7 +187,7 @@ class RackServiceTests {
 		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
 		assertThat(staged.statusLabel()).isEqualTo("Pending Terminate");
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), "tester");
+		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
 		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(applied.statusLabel()).isEqualTo("Terminated");
 		assertThat(applied.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
@@ -204,6 +222,6 @@ class RackServiceTests {
 				null,
 				null,
 				"tester");
-		return changes.applyStaged(draft.changeId(), "tester");
+		return changes.applyStaged(draft.changeId(), appliedBy);
 	}
 }

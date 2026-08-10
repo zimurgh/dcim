@@ -75,12 +75,24 @@ Organization holds parties (e.g. Firm) with the same identity + history pattern.
 | `workflow`
 | Changes, Change Specs, CHRECs, promotion, apply orchestration
 
-| `connectivity` (later)
-| Cross-connects / market data feeds between firms and ports
+| `connectivity`
+| Cross-connects, market data feeds, and cables between firms and ports
 |===
 
-Workflow orchestrates; `organization` / `site` implement type-specific validate/apply.
+Workflow orchestrates; `organization` / `site` / `connectivity` implement type-specific validate/apply.
 Intra-site dependency checks (e.g. terminate device ⇒ ports) use site queries plus change-spec/batch context — not async events for the guard itself.
+
+Connectivity shape:
+
+* Latency — Low Latency (LL) or Ultra Low Latency (ULL) catalog asset
+* Speed — 1G or 10G catalog asset
+* Charge Type — named catalog asset; optional on Cross Connect Type and Market Data Feed Type
+* Cross Connect Type — named catalog asset required on every Cross Connect; optional Charge Type
+* Cross Connect — required circuit id, Cross Connect Type, Latency, and Speed; optional Market Segment; owner firm + billing firm required; provider firm optional
+* Market Data Feed — child of a Cross Connect (0..*); required Market Data Feed Type; same firm roles as Cross Connect
+* Market Data Feed Type — named catalog asset required on every Market Data Feed; optional Charge Type
+* Document — child of a Cross Connect (0..*)
+* Cable — two rack-device ports; optional Cross Connect association (a Cross Connect is expected to have 1..* cables when fully provisioned)
 
 === When a Change Spec is required
 
@@ -200,10 +212,18 @@ A: Enough to identify the target and intent: stable asset id (if any), base hist
 == Domain catalog (assets / products)
 
 * Firm
+* Exchange (OPTIONS | EQUITIES | FUTURES)
+* Market Segment (Equities Index | Agricultural Futures)
 * Data Center, Cage, Rack, Rack Device, Rack Device Port
-* Device Type, Port Type (as needed)
+* Rack Device Type (Patch Panel | Extranet Switch | Matrix Switch | Tap)
+* Rack Device Port Type
 * Cross Connect, Cross Connect Type
+* Latency (LL | ULL)
+* Speed (1G | 10G)
+* Charge Type
 * Market Data Feed, Market Data Feed Type
+* Document
+* Cable
 
 == Tech Stack
 

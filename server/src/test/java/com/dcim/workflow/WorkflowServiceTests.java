@@ -5,8 +5,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.dcim.organization.firm.FirmIdentity;
 import com.dcim.organization.firm.FirmIdentityRepository;
+import com.dcim.organization.user.TestUsers;
+import com.dcim.organization.user.UserHistoryRepository;
+import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.site.cage.CageService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +43,19 @@ class WorkflowServiceTests {
 	@Autowired
 	ChangeCommittedRepository committed;
 
+	@Autowired
+	UserIdentityRepository userIdentities;
+
+	@Autowired
+	UserHistoryRepository userHistory;
+
+	Long appliedBy;
+
+	@BeforeEach
+	void seedUser() {
+		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
+
 	@Test
 	void untrackedToStagedToCommitted() {
 		Long dataCenterId = changes.applyStaged(
@@ -50,7 +67,7 @@ class WorkflowServiceTests {
 						null,
 						null,
 						"tester").changeId(),
-				"tester").assetIdentityId();
+				appliedBy).assetIdentityId();
 
 		ChangeDto draft = changes.createUntracked(
 				"{\"cageName\":\"Cage-A\",\"dataCenterId\":" + dataCenterId + "}",
@@ -79,9 +96,10 @@ class WorkflowServiceTests {
 		assertThat(untracked.existsById(draft.changeId())).isFalse();
 		assertThat(staged.existsById(draft.changeId())).isTrue();
 
-		ChangeDto applied = changes.applyStaged(draft.changeId(), "tester");
+		ChangeDto applied = changes.applyStaged(draft.changeId(), appliedBy);
 		assertThat(applied.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(applied.statusLabel()).isEqualTo("Active");
+		assertThat(applied.appliedBy()).isEqualTo(appliedBy);
 		assertThat(applied.historyLinks()).singleElement()
 				.extracting(ChangeDto.HistoryLinkDto::role)
 				.isEqualTo(HistoryLinkRole.CREATED);
@@ -104,7 +122,7 @@ class WorkflowServiceTests {
 						null,
 						null,
 						"tester").changeId(),
-				"tester").assetIdentityId();
+				appliedBy).assetIdentityId();
 
 		ChangeSpecDto spec = specs.create(firmId, "Cage work", "tester");
 		assertThat(spec.status()).isEqualTo(ChangeSpecStatus.DRAFT);
@@ -125,7 +143,7 @@ class WorkflowServiceTests {
 		assertThat(pending.chrecs()).singleElement().extracting(ChangeSpecDto.ChrecDto::jiraKey)
 				.isEqualTo("CHREC-1");
 
-		ChangeSpecDto applied = specs.apply(spec.changeSpecId(), "tester");
+		ChangeSpecDto applied = specs.apply(spec.changeSpecId(), appliedBy);
 		assertThat(applied.status()).isEqualTo(ChangeSpecStatus.APPLIED);
 		assertThat(committed.existsById(change.changeId())).isTrue();
 		assertThat(staged.existsById(change.changeId())).isFalse();

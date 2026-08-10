@@ -11,6 +11,8 @@ import com.dcim.asset.AssetHistoryLink;
 import com.dcim.asset.JsonPayloads;
 import com.dcim.site.rack.RackIdentity;
 import com.dcim.site.rack.RackIdentityRepository;
+import com.dcim.site.rackdevicetype.RackDeviceTypeIdentity;
+import com.dcim.site.rackdevicetype.RackDeviceTypeIdentityRepository;
 
 import org.springframework.stereotype.Component;
 
@@ -22,16 +24,19 @@ class RackDeviceAssetChangeApplier implements AssetChangeApplier {
 	private final RackDeviceIdentityRepository identities;
 	private final RackDeviceHistoryRepository history;
 	private final RackIdentityRepository racks;
+	private final RackDeviceTypeIdentityRepository deviceTypes;
 	private final JsonPayloads payloads;
 
 	RackDeviceAssetChangeApplier(
 			RackDeviceIdentityRepository identities,
 			RackDeviceHistoryRepository history,
 			RackIdentityRepository racks,
+			RackDeviceTypeIdentityRepository deviceTypes,
 			JsonPayloads payloads) {
 		this.identities = identities;
 		this.history = history;
 		this.racks = racks;
+		this.deviceTypes = deviceTypes;
 		this.payloads = payloads;
 	}
 
@@ -55,10 +60,12 @@ class RackDeviceAssetChangeApplier implements AssetChangeApplier {
 		String name = JsonPayloads.requiredText(body, "rackDeviceName");
 		RackIdentity rack = racks.findById(JsonPayloads.requiredLong(body, "rackId"))
 				.orElseThrow(() -> new AssetApplyException("Rack not found for rack device add"));
+		RackDeviceTypeIdentity deviceType = requireDeviceType(JsonPayloads.requiredLong(body, "rackDeviceTypeId"));
 		RackDeviceIdentity identity = identities.saveAndFlush(new RackDeviceIdentity());
 		RackDeviceHistory created = history.saveAndFlush(new RackDeviceHistory(
 				identity,
 				rack,
+				deviceType,
 				name,
 				command.validOn(),
 				null,
@@ -79,10 +86,14 @@ class RackDeviceAssetChangeApplier implements AssetChangeApplier {
 				? racks.findById(JsonPayloads.requiredLong(body, "rackId"))
 						.orElseThrow(() -> new AssetApplyException("Rack not found for rack device update"))
 				: prior.getRackIdentity();
+		RackDeviceTypeIdentity deviceType = body.hasNonNull("rackDeviceTypeId")
+				? requireDeviceType(JsonPayloads.requiredLong(body, "rackDeviceTypeId"))
+				: prior.getRackDeviceTypeIdentity();
 		prior.close(command.validOn());
 		RackDeviceHistory created = history.saveAndFlush(new RackDeviceHistory(
 				prior.getRackDeviceIdentity(),
 				rack,
+				deviceType,
 				name,
 				command.validOn(),
 				null,
@@ -99,6 +110,7 @@ class RackDeviceAssetChangeApplier implements AssetChangeApplier {
 		RackDeviceHistory created = history.saveAndFlush(new RackDeviceHistory(
 				prior.getRackDeviceIdentity(),
 				prior.getRackIdentity(),
+				prior.getRackDeviceTypeIdentity(),
 				prior.getRackDeviceName(),
 				command.validOn(),
 				null,
@@ -107,6 +119,11 @@ class RackDeviceAssetChangeApplier implements AssetChangeApplier {
 				command.action(),
 				command.committedStatus()));
 		return result(prior, created);
+	}
+
+	private RackDeviceTypeIdentity requireDeviceType(Long rackDeviceTypeId) {
+		return deviceTypes.findById(rackDeviceTypeId)
+				.orElseThrow(() -> new AssetApplyException("Rack device type not found: " + rackDeviceTypeId));
 	}
 
 	private RackDeviceHistory requireCurrentBase(AssetApplyCommand command) {

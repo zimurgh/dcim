@@ -2,11 +2,15 @@ package com.dcim.site.rackdevice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.dcim.organization.user.TestUsers;
+import com.dcim.organization.user.UserHistoryRepository;
+import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeAction;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +28,19 @@ class RackDeviceViewTests {
 	@Autowired
 	RackDeviceViewRepository deviceViews;
 
+	@Autowired
+	UserIdentityRepository userIdentities;
+
+	@Autowired
+	UserHistoryRepository userHistory;
+
+	Long appliedBy;
+
+	@BeforeEach
+	void seedUser() {
+		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
+
 	@Test
 	void flattensRackCageAndDataCenterNames() {
 		ChangeDto dataCenter = applyAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"NY4\"}");
@@ -33,9 +50,13 @@ class RackDeviceViewTests {
 		ChangeDto rack = applyAdd(
 				AssetType.RACK,
 				"{\"rackName\":\"R01\",\"cageId\":" + cage.assetIdentityId() + "}");
+		ChangeDto deviceType = applyAdd(
+				AssetType.RACK_DEVICE_TYPE,
+				"{\"rackDeviceTypeName\":\"Extranet Switch\",\"rackDeviceTypeKind\":\"EXTRANET_SWITCH\"}");
 		ChangeDto device = applyAdd(
 				AssetType.RACK_DEVICE,
-				"{\"rackDeviceName\":\"sw1\",\"rackId\":" + rack.assetIdentityId() + "}");
+				"{\"rackDeviceName\":\"sw1\",\"rackId\":" + rack.assetIdentityId()
+						+ ",\"rackDeviceTypeId\":" + deviceType.assetIdentityId() + "}");
 
 		RackDeviceView view = deviceViews.findCurrentByRackDeviceId(device.assetIdentityId()).orElseThrow();
 		assertThat(view.getRackDeviceId()).isEqualTo(device.assetIdentityId());
@@ -63,6 +84,6 @@ class RackDeviceViewTests {
 				null,
 				null,
 				"tester");
-		return changes.applyStaged(draft.changeId(), "tester");
+		return changes.applyStaged(draft.changeId(), appliedBy);
 	}
 }

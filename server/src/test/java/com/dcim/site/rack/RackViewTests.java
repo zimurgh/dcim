@@ -2,11 +2,15 @@ package com.dcim.site.rack;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.dcim.organization.user.TestUsers;
+import com.dcim.organization.user.UserHistoryRepository;
+import com.dcim.organization.user.UserIdentityRepository;
 import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeAction;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +27,19 @@ class RackViewTests {
 
 	@Autowired
 	RackViewRepository rackViews;
+
+	@Autowired
+	UserIdentityRepository userIdentities;
+
+	@Autowired
+	UserHistoryRepository userHistory;
+
+	Long appliedBy;
+
+	@BeforeEach
+	void seedUser() {
+		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
 
 	@Test
 	void flattensCageAndDataCenterNames() {
@@ -61,6 +78,6 @@ class RackViewTests {
 				null,
 				null,
 				"tester");
-		return changes.applyStaged(draft.changeId(), "tester");
+		return changes.applyStaged(draft.changeId(), appliedBy);
 	}
 }

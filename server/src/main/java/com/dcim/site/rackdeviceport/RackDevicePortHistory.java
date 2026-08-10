@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import com.dcim.asset.AuditHistory;
 import com.dcim.site.rackdevice.RackDeviceIdentity;
+import com.dcim.site.rackdeviceporttype.RackDevicePortTypeIdentity;
 
 import jakarta.persistence.*;
 
@@ -25,6 +26,10 @@ public class RackDevicePortHistory extends AuditHistory {
 	@JoinColumn(name = "RACK_DEVICE_ID", nullable = false)
 	private RackDeviceIdentity rackDeviceIdentity;
 
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	@JoinColumn(name = "RACK_DEVICE_PORT_TYPE_ID", nullable = false)
+	private RackDevicePortTypeIdentity rackDevicePortTypeIdentity;
+
 	@Column(name = "RACK_DEVICE_PORT_NAME", nullable = false, length = 50)
 	private String rackDevicePortName;
 
@@ -34,16 +39,18 @@ public class RackDevicePortHistory extends AuditHistory {
 	public RackDevicePortHistory(
 			RackDevicePortIdentity rackDevicePortIdentity,
 			RackDeviceIdentity rackDeviceIdentity,
+			RackDevicePortTypeIdentity rackDevicePortTypeIdentity,
 			String rackDevicePortName,
 			LocalDate validFrom,
 			LocalDate validTo,
 			Instant appliedAt,
-			String appliedBy,
+			Long appliedBy,
 			String action,
 			String status) {
 		super(validFrom, validTo, appliedAt, appliedBy, action, status);
 		this.rackDevicePortIdentity = rackDevicePortIdentity;
 		this.rackDeviceIdentity = rackDeviceIdentity;
+		this.rackDevicePortTypeIdentity = rackDevicePortTypeIdentity;
 		this.rackDevicePortName = rackDevicePortName;
 	}
 
@@ -65,6 +72,14 @@ public class RackDevicePortHistory extends AuditHistory {
 
 	public Long getRackDeviceId() {
 		return rackDeviceIdentity.getRackDeviceId();
+	}
+
+	public RackDevicePortTypeIdentity getRackDevicePortTypeIdentity() {
+		return rackDevicePortTypeIdentity;
+	}
+
+	public Long getRackDevicePortTypeId() {
+		return rackDevicePortTypeIdentity.getRackDevicePortTypeId();
 	}
 
 	public String getRackDevicePortName() {

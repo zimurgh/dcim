@@ -10,11 +10,12 @@ public record RackDeviceDto(
 		Long rackDeviceId,
 		Long rackDeviceHistoryId,
 		Long rackId,
+		Long rackDeviceTypeId,
 		String rackDeviceName,
 		LocalDate validFrom,
 		LocalDate validTo,
 		Instant appliedAt,
-		String appliedBy,
+		Long appliedBy,
 		String action,
 		String status) {
 
@@ -23,6 +24,7 @@ public record RackDeviceDto(
 				history.getRackDeviceId(),
 				history.getRackDeviceHistoryId(),
 				history.getRackId(),
+				history.getRackDeviceTypeId(),
 				history.getRackDeviceName(),
 				history.getValidFrom(),
 				history.getValidTo(),

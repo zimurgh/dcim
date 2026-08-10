@@ -148,14 +148,14 @@ public class ChangeService {
 	}
 
 	@Transactional
-	public ChangeDto applyStaged(Long changeId, String actor) {
+	public ChangeDto applyStaged(Long changeId, Long appliedBy) {
 		ChangeStaged open = staged.findById(changeId)
 				.orElseThrow(() -> new WorkflowException("Change is not staged: " + changeId));
-		return commitStaged(open, actor);
+		return commitStaged(open, appliedBy);
 	}
 
 	@Transactional
-	ChangeDto commitStaged(ChangeStaged open, String actor) {
+	ChangeDto commitStaged(ChangeStaged open, Long appliedBy) {
 		Instant now = Instant.now(clock);
 		LocalDate validOn = LocalDate.ofInstant(now, ZoneOffset.UTC);
 		String committedStatus = statusLabel(open.getAction(), ChangeStage.COMMITTED);
@@ -170,7 +170,7 @@ public class ChangeService {
 					open.getBaseHistoryId(),
 					now,
 					validOn,
-					actor,
+					appliedBy,
 					committedStatus));
 		}
 		catch (AssetApplyException ex) {
@@ -183,7 +183,7 @@ public class ChangeService {
 				open.getAssetType(),
 				open.getAction(),
 				now,
-				actor);
+				appliedBy);
 		staged.delete(open);
 		entityManager.flush();
 		entityManager.persist(row);

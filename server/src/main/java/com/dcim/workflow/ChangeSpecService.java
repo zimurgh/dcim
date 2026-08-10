@@ -121,7 +121,7 @@ public class ChangeSpecService {
 	}
 
 	@Transactional
-	public ChangeSpecDto apply(Long changeSpecId, String actor) {
+	public ChangeSpecDto apply(Long changeSpecId, Long appliedBy) {
 		ChangeSpec spec = requireStatus(changeSpecId, ChangeSpecStatus.PENDING_BILLING);
 		if (specChrecs.countByChangeSpec_ChangeSpecId(changeSpecId) < 1) {
 			throw new WorkflowException("At least one CHREC is required to apply");
@@ -129,7 +129,7 @@ public class ChangeSpecService {
 		List<ChangeSpecItem> membership = items.findByChangeSpec_ChangeSpecId(changeSpecId);
 		for (ChangeSpecItem item : membership) {
 			ChangeStaged staged = changes.requireStaged(item.getChangeIdentity().getChangeId());
-			changes.commitStaged(staged, actor);
+			changes.commitStaged(staged, appliedBy);
 		}
 		spec.setStatus(ChangeSpecStatus.APPLIED);
 		return toDto(spec);
