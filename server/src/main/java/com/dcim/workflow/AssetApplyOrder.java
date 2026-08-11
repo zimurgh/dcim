@@ -3,15 +3,12 @@ package com.dcim.workflow;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Apply dependents before parents within a Change Spec batch.
- */
-final class AssetApplyOrder {
+public final class AssetApplyOrder {
 
 	private AssetApplyOrder() {
 	}
 
-	static int rank(AssetType type) {
+	public static int rank(AssetType type) {
 		return switch (type) {
 			case RACK_DEVICE_PORT -> 10;
 			case CABLE -> 15;
@@ -29,13 +26,13 @@ final class AssetApplyOrder {
 		};
 	}
 
-	static Comparator<ChangeStaged> comparator() {
+	public static Comparator<ChangeStaged> comparator() {
 		return Comparator
 				.comparingInt((ChangeStaged staged) -> rank(staged.getAssetType()))
 				.thenComparing(ChangeStaged::getChangeId);
 	}
 
-	static List<ChangeStaged> sort(List<ChangeStaged> staged) {
+	public static List<ChangeStaged> sort(List<ChangeStaged> staged) {
 		return staged.stream().sorted(comparator()).toList();
 	}
 }

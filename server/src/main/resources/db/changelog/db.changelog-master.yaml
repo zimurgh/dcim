@@ -2751,3 +2751,202 @@ databaseChangeLog:
                   type: VARCHAR(100)
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: 0027-cross-connect-and-market-data-feed-views
+      author: dcim
+      comment: Flattened read models for cross connects and market data feeds
+      changes:
+        - createView:
+            viewName: V_CROSS_CONNECT
+            selectQuery: |
+              SELECT
+                xh.CROSS_CONNECT_HISTORY_ID AS CROSS_CONNECT_HISTORY_ID,
+                xh.CROSS_CONNECT_ID AS CROSS_CONNECT_ID,
+                xh.CROSS_CONNECT_NAME AS CROSS_CONNECT_NAME,
+                xh.CIRCUIT_ID AS CIRCUIT_ID,
+                xh.CROSS_CONNECT_TYPE_ID AS CROSS_CONNECT_TYPE_ID,
+                cth.CROSS_CONNECT_TYPE_NAME AS CROSS_CONNECT_TYPE_NAME,
+                xh.LATENCY_ID AS LATENCY_ID,
+                lh.LATENCY_NAME AS LATENCY_NAME,
+                xh.SPEED_ID AS SPEED_ID,
+                sh.SPEED_NAME AS SPEED_NAME,
+                xh.MARKET_SEGMENT_ID AS MARKET_SEGMENT_ID,
+                msh.MARKET_SEGMENT_NAME AS MARKET_SEGMENT_NAME,
+                xh.OWNER_FIRM_ID AS OWNER_FIRM_ID,
+                ofh.FIRM_NAME AS OWNER_FIRM_NAME,
+                xh.BILLING_FIRM_ID AS BILLING_FIRM_ID,
+                bfh.FIRM_NAME AS BILLING_FIRM_NAME,
+                xh.PROVIDER_FIRM_ID AS PROVIDER_FIRM_ID,
+                pfh.FIRM_NAME AS PROVIDER_FIRM_NAME,
+                xh.VALID_FROM AS VALID_FROM,
+                xh.VALID_TO AS VALID_TO,
+                xh.APPLIED_AT AS APPLIED_AT,
+                xh.APPLIED_BY AS APPLIED_BY,
+                xh.ACTION AS ACTION,
+                xh.STATUS AS STATUS
+              FROM T_CROSS_CONNECT_HISTORY xh
+              INNER JOIN T_CROSS_CONNECT_TYPE_HISTORY cth
+                ON cth.CROSS_CONNECT_TYPE_ID = xh.CROSS_CONNECT_TYPE_ID
+               AND cth.VALID_TO IS NULL
+              INNER JOIN T_LATENCY_HISTORY lh
+                ON lh.LATENCY_ID = xh.LATENCY_ID
+               AND lh.VALID_TO IS NULL
+              INNER JOIN T_SPEED_HISTORY sh
+                ON sh.SPEED_ID = xh.SPEED_ID
+               AND sh.VALID_TO IS NULL
+              INNER JOIN T_FIRM_HISTORY ofh
+                ON ofh.FIRM_ID = xh.OWNER_FIRM_ID
+               AND ofh.VALID_TO IS NULL
+              INNER JOIN T_FIRM_HISTORY bfh
+                ON bfh.FIRM_ID = xh.BILLING_FIRM_ID
+               AND bfh.VALID_TO IS NULL
+              LEFT JOIN T_MARKET_SEGMENT_HISTORY msh
+                ON msh.MARKET_SEGMENT_ID = xh.MARKET_SEGMENT_ID
+               AND msh.VALID_TO IS NULL
+              LEFT JOIN T_FIRM_HISTORY pfh
+                ON pfh.FIRM_ID = xh.PROVIDER_FIRM_ID
+               AND pfh.VALID_TO IS NULL
+        - createView:
+            viewName: V_MARKET_DATA_FEED
+            selectQuery: |
+              SELECT
+                mfh.MARKET_DATA_FEED_HISTORY_ID AS MARKET_DATA_FEED_HISTORY_ID,
+                mfh.MARKET_DATA_FEED_ID AS MARKET_DATA_FEED_ID,
+                mfh.CROSS_CONNECT_ID AS CROSS_CONNECT_ID,
+                xch.CROSS_CONNECT_NAME AS CROSS_CONNECT_NAME,
+                mfh.MARKET_DATA_FEED_TYPE_ID AS MARKET_DATA_FEED_TYPE_ID,
+                mdth.MARKET_DATA_FEED_TYPE_NAME AS MARKET_DATA_FEED_TYPE_NAME,
+                mfh.MARKET_DATA_FEED_NAME AS MARKET_DATA_FEED_NAME,
+                mfh.OWNER_FIRM_ID AS OWNER_FIRM_ID,
+                ofh.FIRM_NAME AS OWNER_FIRM_NAME,
+                mfh.BILLING_FIRM_ID AS BILLING_FIRM_ID,
+                bfh.FIRM_NAME AS BILLING_FIRM_NAME,
+                mfh.PROVIDER_FIRM_ID AS PROVIDER_FIRM_ID,
+                pfh.FIRM_NAME AS PROVIDER_FIRM_NAME,
+                mfh.VALID_FROM AS VALID_FROM,
+                mfh.VALID_TO AS VALID_TO,
+                mfh.APPLIED_AT AS APPLIED_AT,
+                mfh.APPLIED_BY AS APPLIED_BY,
+                mfh.ACTION AS ACTION,
+                mfh.STATUS AS STATUS
+              FROM T_MARKET_DATA_FEED_HISTORY mfh
+              INNER JOIN T_CROSS_CONNECT_HISTORY xch
+                ON xch.CROSS_CONNECT_ID = mfh.CROSS_CONNECT_ID
+               AND xch.VALID_TO IS NULL
+              INNER JOIN T_MARKET_DATA_FEED_TYPE_HISTORY mdth
+                ON mdth.MARKET_DATA_FEED_TYPE_ID = mfh.MARKET_DATA_FEED_TYPE_ID
+               AND mdth.VALID_TO IS NULL
+              INNER JOIN T_FIRM_HISTORY ofh
+                ON ofh.FIRM_ID = mfh.OWNER_FIRM_ID
+               AND ofh.VALID_TO IS NULL
+              INNER JOIN T_FIRM_HISTORY bfh
+                ON bfh.FIRM_ID = mfh.BILLING_FIRM_ID
+               AND bfh.VALID_TO IS NULL
+              LEFT JOIN T_FIRM_HISTORY pfh
+                ON pfh.FIRM_ID = mfh.PROVIDER_FIRM_ID
+               AND pfh.VALID_TO IS NULL
+
+  - changeSet:
+      id: 0028-change-and-change-spec-views
+      author: dcim
+      comment: Flattened read models for changes and change specs
+      changes:
+        - createView:
+            viewName: V_CHANGE_SPEC
+            selectQuery: |
+              SELECT
+                cs.CHANGE_SPEC_ID AS CHANGE_SPEC_ID,
+                cs.OWNER_FIRM_ID AS OWNER_FIRM_ID,
+                ofh.FIRM_NAME AS OWNER_FIRM_NAME,
+                cs.STATUS AS STATUS,
+                cs.NAME AS NAME,
+                cs.CREATED_AT AS CREATED_AT,
+                cs.CREATED_BY AS CREATED_BY
+              FROM T_CHANGE_SPEC cs
+              INNER JOIN T_FIRM_HISTORY ofh
+                ON ofh.FIRM_ID = cs.OWNER_FIRM_ID
+               AND ofh.VALID_TO IS NULL
+        - createView:
+            viewName: V_CHANGE
+            selectQuery: |
+              SELECT
+                u.CHANGE_ID AS CHANGE_ID,
+                'UNTRACKED' AS STAGE,
+                cas.STATUS AS STATUS_LABEL,
+                p.BODY AS BODY,
+                CAST(NULL AS VARCHAR(50)) AS ASSET_TYPE,
+                CAST(NULL AS VARCHAR(50)) AS ACTION,
+                CAST(NULL AS BIGINT) AS ASSET_IDENTITY_ID,
+                CAST(NULL AS BIGINT) AS BASE_HISTORY_ID,
+                u.CHANGE_PAYLOAD_ID AS CHANGE_PAYLOAD_ID,
+                u.CREATED_AT AS EVENT_AT,
+                u.CREATED_BY AS ACTOR,
+                CAST(NULL AS BIGINT) AS APPLIED_BY,
+                CAST(NULL AS VARCHAR(50)) AS APPLIED_BY_NAME,
+                (SELECT MIN(si.CHANGE_SPEC_ID) FROM T_CHANGE_SPEC_ITEM si WHERE si.CHANGE_ID = u.CHANGE_ID) AS CHANGE_SPEC_ID
+              FROM T_CHANGE_UNTRACKED u
+              INNER JOIN T_CHANGE_PAYLOAD p
+                ON p.CHANGE_PAYLOAD_ID = u.CHANGE_PAYLOAD_ID
+              INNER JOIN T_CHANGE_ACTION_STATUS cas
+                ON cas.ACTION = 'ADD'
+               AND cas.STAGE = 'UNTRACKED'
+              UNION ALL
+              SELECT
+                s.CHANGE_ID AS CHANGE_ID,
+                'STAGED' AS STAGE,
+                cas.STATUS AS STATUS_LABEL,
+                p.BODY AS BODY,
+                s.ASSET_TYPE AS ASSET_TYPE,
+                s.ACTION AS ACTION,
+                s.ASSET_IDENTITY_ID AS ASSET_IDENTITY_ID,
+                s.BASE_HISTORY_ID AS BASE_HISTORY_ID,
+                s.CHANGE_PAYLOAD_ID AS CHANGE_PAYLOAD_ID,
+                s.STAGED_AT AS EVENT_AT,
+                s.STAGED_BY AS ACTOR,
+                CAST(NULL AS BIGINT) AS APPLIED_BY,
+                CAST(NULL AS VARCHAR(50)) AS APPLIED_BY_NAME,
+                (SELECT MIN(si.CHANGE_SPEC_ID) FROM T_CHANGE_SPEC_ITEM si WHERE si.CHANGE_ID = s.CHANGE_ID) AS CHANGE_SPEC_ID
+              FROM T_CHANGE_STAGED s
+              INNER JOIN T_CHANGE_PAYLOAD p
+                ON p.CHANGE_PAYLOAD_ID = s.CHANGE_PAYLOAD_ID
+              INNER JOIN T_CHANGE_ACTION_STATUS cas
+                ON cas.ACTION = s.ACTION
+               AND cas.STAGE = 'STAGED'
+              UNION ALL
+              SELECT
+                c.CHANGE_ID AS CHANGE_ID,
+                'COMMITTED' AS STAGE,
+                cas.STATUS AS STATUS_LABEL,
+                p.BODY AS BODY,
+                c.ASSET_TYPE AS ASSET_TYPE,
+                c.ACTION AS ACTION,
+                CAST(NULL AS BIGINT) AS ASSET_IDENTITY_ID,
+                CAST(NULL AS BIGINT) AS BASE_HISTORY_ID,
+                c.CHANGE_PAYLOAD_ID AS CHANGE_PAYLOAD_ID,
+                c.APPLIED_AT AS EVENT_AT,
+                CAST(NULL AS VARCHAR(50)) AS ACTOR,
+                c.APPLIED_BY AS APPLIED_BY,
+                uh.USER_NAME AS APPLIED_BY_NAME,
+                (SELECT MIN(si.CHANGE_SPEC_ID) FROM T_CHANGE_SPEC_ITEM si WHERE si.CHANGE_ID = c.CHANGE_ID) AS CHANGE_SPEC_ID
+              FROM T_CHANGE_COMMITTED c
+              INNER JOIN T_CHANGE_PAYLOAD p
+                ON p.CHANGE_PAYLOAD_ID = c.CHANGE_PAYLOAD_ID
+              INNER JOIN T_CHANGE_ACTION_STATUS cas
+                ON cas.ACTION = c.ACTION
+               AND cas.STAGE = 'COMMITTED'
+              LEFT JOIN T_USER_HISTORY uh
+                ON uh.USER_ID = c.APPLIED_BY
+               AND uh.VALID_TO IS NULL
+
+  - changeSet:
+      id: 0029-demo-seed
+      author: dcim
+      context: demo
+      comment: Coherent demo inventory and workflow rows for local MariaDB
+      changes:
+        - sqlFile:
+            path: demo-seed.sql
+            relativeToChangelogFile: true
+            splitStatements: true
+            stripComments: true

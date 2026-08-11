@@ -39,6 +39,4 @@ class UserAssetChangeValidator extends AbstractAssetChangeValidator<UserHistory>
 			}
 		}
 	}
-
-	// User terminate is allowed even when the user has applied history rows (appliedBy is not blocked).
 }

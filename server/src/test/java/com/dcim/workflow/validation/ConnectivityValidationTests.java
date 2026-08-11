@@ -9,14 +9,7 @@ import com.dcim.workflow.ChangeSpecDto;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Connectivity rules from DESIGN.md: Cross Connect / Market Data Feed / Document / Cable clash and
- * reference checks, Latency / Speed / Charge Type / Cross Connect Type / Market Data Feed Type catalog
- * clashes, and every terminate-blocked-by-live-reference guard in the module.
- */
 class ConnectivityValidationTests extends ValidationTestSupport {
-
-	// ================================================================== clash: Cross Connect circuitId
 
 	@Test
 	void circuitIdUniqueAllowsAdd() {
@@ -36,8 +29,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
-
-	// ================================================================== clash: Market Data Feed name (scoped to XC)
 
 	@Test
 	void marketDataFeedNameUniqueWithinCrossConnectAllowsAdd() {
@@ -92,8 +83,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== clash: Document name (scoped to XC)
-
 	@Test
 	void documentNameUniqueWithinCrossConnectAllowsAdd() {
 		XcDeps deps = seedXcDeps();
@@ -132,8 +121,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== clash: Cable ports distinct
-
 	@Test
 	void cableWithDistinctPortsAllowsAdd() {
 		Long[] ports = seedPortPair();
@@ -153,8 +140,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
-
-	// ================================================================== clash: Cable port occupancy
 
 	@Test
 	void cablePortOccupancyAllowsAddWhenPortsFree() {
@@ -180,8 +165,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
-
-	// ================================================================== clash: Latency type / name unique
 
 	@Test
 	void latencyTypeUniqueAllowsAddForUnusedType() {
@@ -218,8 +201,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Speed type unique
-
 	@Test
 	void speedTypeUniqueAllowsAddForUnusedType() {
 		seedSpeed(unique("Speed"), "1G");
@@ -255,8 +236,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Charge Type name (global)
-
 	@Test
 	void chargeTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(AssetType.CHARGE_TYPE, "{\"chargeTypeName\":\"" + unique("MRC") + "\"}");
@@ -273,8 +252,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== clash: Cross Connect Type name (global)
 
 	@Test
 	void crossConnectTypeNameAddSucceedsWhenUnique() {
@@ -294,8 +271,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Market Data Feed Type name (global)
-
 	@Test
 	void marketDataFeedTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
@@ -313,8 +288,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== terminate: Cross Connect <- feeds/docs/cables
 
 	@Test
 	void terminateCrossConnectSucceedsWhenNoLiveChildren() {
@@ -399,8 +372,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertThat(cables.findCurrent(cableId).orElseThrow().status()).isEqualTo("Terminated");
 	}
 
-	// ================================================================== terminate: Latency <- Cross Connect
-
 	@Test
 	void terminateLatencyBlockedByActiveCrossConnect() {
 		XcDeps deps = seedXcDeps();
@@ -419,8 +390,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== terminate: Speed <- Cross Connect
 
 	@Test
 	void terminateSpeedBlockedByActiveCrossConnect() {
@@ -441,8 +410,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== terminate: Cross Connect Type <- Cross Connect
-
 	@Test
 	void terminateCrossConnectTypeBlockedByActiveCrossConnect() {
 		XcDeps deps = seedXcDeps();
@@ -461,8 +428,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== terminate: Market Data Feed Type <- Feed
 
 	@Test
 	void terminateMarketDataFeedTypeBlockedByActiveFeed() {
@@ -484,8 +449,6 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== terminate: Charge Type <- XcType / FeedType
 
 	@Test
 	void terminateChargeTypeBlockedByActiveCrossConnectType() {

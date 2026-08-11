@@ -6,10 +6,6 @@ import org.hibernate.annotations.Immutable;
 
 import jakarta.persistence.*;
 
-/**
- * Read model for rack history with cage and data center names flattened
- * instead of a {@link com.dcim.site.cage.CageIdentity} association.
- */
 @Entity
 @Immutable
 @Table(name = "V_RACK")

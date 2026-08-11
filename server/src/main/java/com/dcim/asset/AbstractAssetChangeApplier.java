@@ -7,13 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import tools.jackson.databind.JsonNode;
 
-/**
- * Template for type-specific {@link AssetChangeApplier}s: action switch, concurrency, and history links.
- * Subclasses supply identity/history persistence and how to build history rows from payload / prior.
- *
- * @param <I> identity entity
- * @param <H> history entity extending {@link AuditHistory}
- */
 public abstract class AbstractAssetChangeApplier<I, H extends AuditHistory> implements AssetChangeApplier {
 
 	private final String assetType;
@@ -92,13 +85,10 @@ public abstract class AbstractAssetChangeApplier<I, H extends AuditHistory> impl
 				command, history::findById, historyIdentityId, assetLabel);
 	}
 
-	/** Build the first history row for ADD from the request payload. */
 	protected abstract H createAdd(I identity, JsonNode body, AssetApplyCommand command);
 
-	/** Build the next history row for UPDATE from prior + payload. */
 	protected abstract H createUpdate(H prior, JsonNode body, AssetApplyCommand command);
 
-	/** Build the TERMINATE history row (typically copies prior domain fields). */
 	protected abstract H createTerminate(H prior, AssetApplyCommand command);
 
 	protected final JsonPayloads payloads() {

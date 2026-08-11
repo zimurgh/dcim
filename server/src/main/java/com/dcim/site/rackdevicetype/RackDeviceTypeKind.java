@@ -1,8 +1,5 @@
 package com.dcim.site.rackdevicetype;
 
-/**
- * Catalog values for rack devices.
- */
 public enum RackDeviceTypeKind {
 	PATCH_PANEL("Patch Panel"),
 	EXTRANET_SWITCH("Extranet Switch"),

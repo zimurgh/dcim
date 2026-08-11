@@ -1,8 +1,5 @@
 package com.dcim.organization.marketsegment;
 
-/**
- * Market segment catalog values for cross connects.
- */
 public enum MarketSegmentType {
 	EQUITIES_INDEX("Equities Index"),
 	AGRICULTURAL_FUTURES("Agricultural Futures");

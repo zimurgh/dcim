@@ -1,0 +1,28 @@
+<div class="flex h-full flex-col gap-3">
+  <nav class="flex items-center gap-1 border-b border-border" aria-label="Cross connect details">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        (click)="selectTab(tab.id)"
+        class="-mb-px inline-flex h-9 items-center border-b-2 px-3 text-sm font-medium transition-colors"
+        [class.border-foreground]="activeTab() === tab.id"
+        [class.text-foreground]="activeTab() === tab.id"
+        [class.border-transparent]="activeTab() !== tab.id"
+        [class.text-muted-foreground]="activeTab() !== tab.id"
+        [class.hover:text-foreground]="activeTab() !== tab.id"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <div class="min-h-0 flex-1 overflow-hidden rounded-lg border border-border">
+    <ag-grid-angular
+      class="h-full w-full"
+      [theme]="theme"
+      [rowData]="rowData()"
+      [columnDefs]="columnDefs()"
+      [defaultColDef]="defaultColDef"
+    />
+  </div>
+</div>

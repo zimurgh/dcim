@@ -30,7 +30,10 @@ class ChangeSpecController {
 	}
 
 	@GetMapping
-	List<ChangeSpecDto> list(@RequestParam Long ownerFirmId) {
+	List<ChangeSpecDto> list(@RequestParam(required = false) Long ownerFirmId) {
+		if (ownerFirmId == null) {
+			return specs.listAll();
+		}
 		return specs.listForFirm(ownerFirmId);
 	}
 

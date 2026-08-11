@@ -1,0 +1,23 @@
+<section class="flex flex-col gap-4">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold tracking-tight">Change Spec</h1>
+    <p class="text-sm text-muted-foreground">Planned and recorded change specifications.</p>
+  </header>
+
+  <nav
+    class="flex items-center gap-1 border-b border-border"
+    aria-label="Change Spec sections"
+  >
+    @for (item of subNavItems; track item.path) {
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="border-foreground text-foreground"
+        class="-mb-px inline-flex h-9 items-center border-b-2 border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+
+  <router-outlet />
+</section>

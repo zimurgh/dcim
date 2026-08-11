@@ -120,6 +120,12 @@ class AssetChangeLifecycleTests {
 	CableService cables;
 
 	@Autowired
+	com.dcim.connectivity.document.DocumentService documents;
+
+	@Autowired
+	com.dcim.organization.user.UserService users;
+
+	@Autowired
 	UserIdentityRepository userIdentities;
 
 	@Autowired
@@ -130,6 +136,102 @@ class AssetChangeLifecycleTests {
 	@BeforeEach
 	void seedUser() {
 		appliedBy = TestUsers.seed(userIdentities, userHistory, "tester");
+	}
+
+	@Test
+	void userAddUpdateTerminateThroughStages() {
+		ChangeDto add = progress(
+				AssetType.USER,
+				ChangeAction.ADD,
+				null,
+				null,
+				"{\"userName\":\"alice\",\"isInitiator\":true}");
+		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
+		assertThat(add.statusLabel()).isEqualTo("Active");
+		assertThat(add.historyLinks()).singleElement().satisfies(link -> {
+			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
+			assertThat(link.assetType()).isEqualTo(AssetType.USER);
+		});
+
+		com.dcim.organization.user.UserDto current = users.findCurrent(add.assetIdentityId()).orElseThrow();
+		assertThat(current.userName()).isEqualTo("alice");
+		assertThat(current.isInitiator()).isTrue();
+		assertThat(current.action()).isEqualTo("ADD");
+		assertThat(current.status()).isEqualTo("Active");
+		assertThat(users.history(add.assetIdentityId())).hasSize(1);
+		assertCommittedLinks(add.changeId(), 1);
+
+		ChangeDto update = progress(
+				AssetType.USER,
+				ChangeAction.UPDATE,
+				add.assetIdentityId(),
+				current.userHistoryId(),
+				"{\"userName\":\"alice-renamed\",\"isInitiator\":false}");
+		assertThat(update.historyLinks()).extracting(ChangeDto.HistoryLinkDto::role)
+				.containsExactly(HistoryLinkRole.CLOSED_PRIOR, HistoryLinkRole.CREATED);
+
+		com.dcim.organization.user.UserDto afterUpdate = users.findCurrent(add.assetIdentityId()).orElseThrow();
+		assertThat(afterUpdate.userName()).isEqualTo("alice-renamed");
+		assertThat(afterUpdate.isInitiator()).isFalse();
+		assertThat(afterUpdate.action()).isEqualTo("UPDATE");
+		assertThat(users.history(add.assetIdentityId())).hasSize(2);
+
+		ChangeDto terminate = progress(
+				AssetType.USER,
+				ChangeAction.TERMINATE,
+				add.assetIdentityId(),
+				afterUpdate.userHistoryId(),
+				"{}");
+		assertThat(terminate.statusLabel()).isEqualTo("Terminated");
+		com.dcim.organization.user.UserDto afterTerminate = users.findCurrent(add.assetIdentityId()).orElseThrow();
+		assertThat(afterTerminate.status()).isEqualTo("Terminated");
+		assertThat(afterTerminate.action()).isEqualTo("TERMINATE");
+		assertThat(users.history(add.assetIdentityId())).hasSize(3);
+		assertCommittedLinks(terminate.changeId(), 2);
+	}
+
+	@Test
+	void documentAddUpdateTerminateThroughStages() {
+		Long crossConnectId = seedCrossConnectForLifecycle();
+
+		ChangeDto add = progress(
+				AssetType.DOCUMENT,
+				ChangeAction.ADD,
+				null,
+				null,
+				"{\"documentName\":\"LOA-1\",\"crossConnectId\":" + crossConnectId + "}");
+		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
+		assertCreatedLink(add, AssetType.DOCUMENT);
+
+		com.dcim.connectivity.document.DocumentDto current =
+				documents.findCurrent(add.assetIdentityId()).orElseThrow();
+		assertThat(current.documentName()).isEqualTo("LOA-1");
+		assertThat(current.crossConnectId()).isEqualTo(crossConnectId);
+		assertThat(current.status()).isEqualTo("Active");
+		assertThat(documents.history(add.assetIdentityId())).hasSize(1);
+
+		ChangeDto update = progress(
+				AssetType.DOCUMENT,
+				ChangeAction.UPDATE,
+				add.assetIdentityId(),
+				current.documentHistoryId(),
+				"{\"documentName\":\"LOA-1B\",\"crossConnectId\":" + crossConnectId + "}");
+		com.dcim.connectivity.document.DocumentDto afterUpdate =
+				documents.findCurrent(add.assetIdentityId()).orElseThrow();
+		assertThat(afterUpdate.documentName()).isEqualTo("LOA-1B");
+		assertThat(afterUpdate.action()).isEqualTo("UPDATE");
+		assertThat(documents.history(add.assetIdentityId())).hasSize(2);
+
+		ChangeDto terminate = progress(
+				AssetType.DOCUMENT,
+				ChangeAction.TERMINATE,
+				add.assetIdentityId(),
+				afterUpdate.documentHistoryId(),
+				"{}");
+		assertThat(terminate.statusLabel()).isEqualTo("Terminated");
+		assertThat(documents.findCurrent(add.assetIdentityId()).orElseThrow().status()).isEqualTo("Terminated");
+		assertThat(documents.history(add.assetIdentityId())).hasSize(3);
+		assertCommittedLinks(terminate.changeId(), 2);
 	}
 
 	@Test
@@ -1049,6 +1151,26 @@ class AssetChangeLifecycleTests {
 		assertThat(afterTerminate.cableName()).isEqualTo("CBL-1B");
 		assertThat(cables.history(add.assetIdentityId())).hasSize(3);
 		assertCommittedLinks(terminate.changeId(), 2);
+	}
+
+	private Long seedCrossConnectForLifecycle() {
+		Long ownerFirmId = seedFirm("DocOwner");
+		Long billingFirmId = seedFirm("DocBilling");
+		Long crossConnectTypeId = seedCrossConnectType("Doc XC Type");
+		Long latencyId = seedLatency("Doc Latency", "LL");
+		Long speedId = seedSpeed("Doc Speed", "1G");
+		return progress(
+				AssetType.CROSS_CONNECT,
+				ChangeAction.ADD,
+				null,
+				null,
+				"{\"crossConnectName\":\"XC-Doc\",\"circuitId\":\"CKT-DOC-1\""
+						+ ",\"crossConnectTypeId\":" + crossConnectTypeId
+						+ ",\"latencyId\":" + latencyId
+						+ ",\"speedId\":" + speedId
+						+ ",\"ownerFirmId\":" + ownerFirmId
+						+ ",\"billingFirmId\":" + billingFirmId + "}")
+				.assetIdentityId();
 	}
 
 	private Long seedFirm(String firmName) {

@@ -10,24 +10,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class MarketDataFeedService {
 
 	private final MarketDataFeedHistoryRepository feeds;
+	private final MarketDataFeedViewRepository feedViews;
 
-	MarketDataFeedService(MarketDataFeedHistoryRepository feeds) {
+	MarketDataFeedService(MarketDataFeedHistoryRepository feeds, MarketDataFeedViewRepository feedViews) {
 		this.feeds = feeds;
+		this.feedViews = feedViews;
 	}
 
 	@Transactional(readOnly = true)
 	public List<MarketDataFeedDto> listCurrent() {
-		return feeds.findCurrent().stream().map(MarketDataFeedDto::from).toList();
+		return feedViews.findCurrent().stream().map(MarketDataFeedDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public List<MarketDataFeedDto> listCurrentByCrossConnect(Long crossConnectId) {
-		return feeds.findCurrentByCrossConnectId(crossConnectId).stream().map(MarketDataFeedDto::from).toList();
+		return feedViews.findCurrentByCrossConnectId(crossConnectId).stream().map(MarketDataFeedDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public Optional<MarketDataFeedDto> findCurrent(Long marketDataFeedId) {
-		return feeds.findCurrentByMarketDataFeedId(marketDataFeedId).map(MarketDataFeedDto::from);
+		return feedViews.findCurrentByMarketDataFeedId(marketDataFeedId).map(MarketDataFeedDto::from);
 	}
 
 	@Transactional(readOnly = true)
@@ -40,7 +42,7 @@ public class MarketDataFeedService {
 
 	@Transactional(readOnly = true)
 	public List<MarketDataFeedDto> listCurrentByMarketDataFeedTypeId(Long marketDataFeedTypeId) {
-		return feeds.findCurrentByMarketDataFeedTypeId(marketDataFeedTypeId).stream()
+		return feedViews.findCurrentByMarketDataFeedTypeId(marketDataFeedTypeId).stream()
 				.map(MarketDataFeedDto::from)
 				.toList();
 	}

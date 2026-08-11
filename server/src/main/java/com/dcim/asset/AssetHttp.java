@@ -6,9 +6,6 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Narrow HTTP helpers for asset read controllers (404 on missing current/history).
- */
 public final class AssetHttp {
 
 	private AssetHttp() {

@@ -10,19 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class CrossConnectService {
 
 	private final CrossConnectHistoryRepository crossConnects;
+	private final CrossConnectViewRepository crossConnectViews;
 
-	CrossConnectService(CrossConnectHistoryRepository crossConnects) {
+	CrossConnectService(
+			CrossConnectHistoryRepository crossConnects,
+			CrossConnectViewRepository crossConnectViews) {
 		this.crossConnects = crossConnects;
+		this.crossConnectViews = crossConnectViews;
 	}
 
 	@Transactional(readOnly = true)
 	public List<CrossConnectDto> listCurrent() {
-		return crossConnects.findCurrent().stream().map(CrossConnectDto::from).toList();
+		return crossConnectViews.findCurrent().stream().map(CrossConnectDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public Optional<CrossConnectDto> findCurrent(Long crossConnectId) {
-		return crossConnects.findCurrentByCrossConnectId(crossConnectId).map(CrossConnectDto::from);
+		return crossConnectViews.findCurrentByCrossConnectId(crossConnectId).map(CrossConnectDto::from);
 	}
 
 	@Transactional(readOnly = true)
@@ -35,17 +39,17 @@ public class CrossConnectService {
 
 	@Transactional(readOnly = true)
 	public List<CrossConnectDto> listCurrentByLatencyId(Long latencyId) {
-		return crossConnects.findCurrentByLatencyId(latencyId).stream().map(CrossConnectDto::from).toList();
+		return crossConnectViews.findCurrentByLatencyId(latencyId).stream().map(CrossConnectDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public List<CrossConnectDto> listCurrentBySpeedId(Long speedId) {
-		return crossConnects.findCurrentBySpeedId(speedId).stream().map(CrossConnectDto::from).toList();
+		return crossConnectViews.findCurrentBySpeedId(speedId).stream().map(CrossConnectDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)
 	public List<CrossConnectDto> listCurrentByCrossConnectTypeId(Long crossConnectTypeId) {
-		return crossConnects.findCurrentByCrossConnectTypeId(crossConnectTypeId).stream()
+		return crossConnectViews.findCurrentByCrossConnectTypeId(crossConnectTypeId).stream()
 				.map(CrossConnectDto::from)
 				.toList();
 	}

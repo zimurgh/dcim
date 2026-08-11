@@ -6,6 +6,7 @@ import java.util.List;
 public record ChangeSpecDto(
 		Long changeSpecId,
 		Long ownerFirmId,
+		String ownerFirmName,
 		String name,
 		ChangeSpecStatus status,
 		Instant createdAt,

@@ -5,10 +5,6 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Forwarding accessors for {@link AuditSlice} on asset DTOs so Java call sites stay flat
- * while JSON uses {@code @JsonUnwrapped} on the {@code audit} component.
- */
 public interface AuditedDto {
 
 	AuditSlice audit();

@@ -1,8 +1,5 @@
 package com.dcim.connectivity.speed;
 
-/**
- * Speed tier for a cross connect: 1G or 10G.
- */
 public enum SpeedType {
 	ONE_G("1G"),
 	TEN_G("10G");

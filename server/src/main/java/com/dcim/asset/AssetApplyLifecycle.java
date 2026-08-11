@@ -4,9 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * Shared ADD/UPDATE/TERMINATE apply mechanics: concurrency check and history-link results.
- */
 public final class AssetApplyLifecycle {
 
 	private AssetApplyLifecycle() {

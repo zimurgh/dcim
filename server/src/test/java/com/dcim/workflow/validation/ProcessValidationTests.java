@@ -13,10 +13,6 @@ import com.dcim.workflow.ChangeValidationResult;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Process-level rules from DESIGN.md "Change validation": save independent of validation, apply as a
- * hard gate, batch-aware validation across a Change Spec, and Change Spec validate aggregation.
- */
 class ProcessValidationTests extends ValidationTestSupport {
 
 	@Test
@@ -97,7 +93,6 @@ class ProcessValidationTests extends ValidationTestSupport {
 		assertThat(result.ok()).isFalse();
 		assertThat(result.issues()).extracting(ValidationIssue::code)
 				.contains(ValidationCodes.MISSING_FIELD, ValidationCodes.REFERENCE_NOT_FOUND);
-		// Aggregated messages are change-id-prefixed so issues stay traceable to their source change.
 		assertThat(result.issues()).extracting(ValidationIssue::message)
 				.anySatisfy(message -> assertThat(message).contains("Change " + badDataCenter.changeId()))
 				.anySatisfy(message -> assertThat(message).contains("Change " + badCage.changeId()));

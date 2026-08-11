@@ -4,9 +4,6 @@ import com.dcim.asset.AuditSlice;
 import com.dcim.asset.AuditedDto;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
-/**
- * Shallow rack DTO for API responses (current history row).
- */
 public record RackDto(
 		Long rackId,
 		Long rackHistoryId,

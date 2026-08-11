@@ -2,9 +2,6 @@ package com.dcim.site.rack;
 
 import jakarta.persistence.*;
 
-/**
- * Stable rack identity across history revisions.
- */
 @Entity
 @Table(name = "T_RACK_IDENTITY")
 public class RackIdentity {

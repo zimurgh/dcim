@@ -6,10 +6,6 @@ import org.hibernate.annotations.Immutable;
 
 import jakarta.persistence.*;
 
-/**
- * Read model for cage history with the parent data center's current name
- * instead of a {@link com.dcim.site.datacenter.DataCenterIdentity} association.
- */
 @Entity
 @Immutable
 @Table(name = "V_CAGE")

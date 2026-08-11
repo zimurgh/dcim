@@ -2,9 +2,6 @@ package com.dcim.organization.exchange;
 
 import jakarta.persistence.*;
 
-/**
- * Stable exchange identity across history revisions.
- */
 @Entity
 @Table(name = "T_EXCHANGE_IDENTITY")
 public class ExchangeIdentity {

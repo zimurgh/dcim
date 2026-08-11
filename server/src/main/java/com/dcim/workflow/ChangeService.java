@@ -34,6 +34,7 @@ public class ChangeService {
 	private final ChangeCommittedHistoryRepository committedHistory;
 	private final ChangeActionStatusRepository actionStatuses;
 	private final ChangeSpecItemRepository specItems;
+	private final ChangeViewRepository changeViews;
 	private final List<AssetChangeApplier> appliers;
 	private final List<AssetChangeValidator> validators;
 	private final EntityManager entityManager;
@@ -48,6 +49,7 @@ public class ChangeService {
 			ChangeCommittedHistoryRepository committedHistory,
 			ChangeActionStatusRepository actionStatuses,
 			ChangeSpecItemRepository specItems,
+			ChangeViewRepository changeViews,
 			List<AssetChangeApplier> appliers,
 			List<AssetChangeValidator> validators,
 			EntityManager entityManager,
@@ -60,6 +62,7 @@ public class ChangeService {
 		this.committedHistory = committedHistory;
 		this.actionStatuses = actionStatuses;
 		this.specItems = specItems;
+		this.changeViews = changeViews;
 		this.appliers = List.copyOf(appliers);
 		this.validators = List.copyOf(validators);
 		this.entityManager = entityManager;
@@ -73,6 +76,7 @@ public class ChangeService {
 		ChangePayload payload = payloads.saveAndFlush(new ChangePayload(identity, requireBody(body), now));
 		ChangeUntracked row = new ChangeUntracked(identity, payload, now, actor);
 		entityManager.persist(row);
+		entityManager.flush();
 		return ChangeDto.untracked(row, statusLabel(ChangeAction.ADD, ChangeStage.UNTRACKED));
 	}
 
@@ -236,6 +240,11 @@ public class ChangeService {
 				.toList();
 
 		return ChangeDto.committed(row, committedStatus, applied.assetIdentityId(), links);
+	}
+
+	@Transactional(readOnly = true)
+	public List<ChangeDto> listAll() {
+		return changeViews.findAllLatestFirst().stream().map(ChangeDto::from).toList();
 	}
 
 	@Transactional(readOnly = true)

@@ -2,9 +2,6 @@ package com.dcim.site.cage;
 
 import jakarta.persistence.*;
 
-/**
- * Stable cage identity across history revisions.
- */
 @Entity
 @Table(name = "T_CAGE_IDENTITY")
 public class CageIdentity {

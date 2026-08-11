@@ -1,0 +1,13 @@
+<div class="h-[36rem] overflow-hidden rounded-lg border border-border">
+  <ag-grid-angular
+    class="h-full w-full"
+    [theme]="theme"
+    [rowData]="rowData()"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [masterDetail]="masterDetail"
+    [detailRowAutoHeight]="detailRowAutoHeight"
+    [detailCellRendererParams]="detailCellRendererParams"
+    [isRowMaster]="isRowMaster"
+  />
+</div>

@@ -3,9 +3,6 @@ package com.dcim.asset;
 import java.time.Instant;
 import java.time.LocalDate;
 
-/**
- * Audit/temporal fields shared by every asset history DTO.
- */
 public record AuditSlice(
 		LocalDate validFrom,
 		LocalDate validTo,

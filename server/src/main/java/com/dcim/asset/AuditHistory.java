@@ -5,10 +5,6 @@ import java.time.LocalDate;
 
 import jakarta.persistence.*;
 
-/**
- * Shared temporal / audit columns for append-only asset history rows.
- * {@code appliedBy} is the applying user's stable id ({@code T_USER_IDENTITY.USER_ID}).
- */
 @MappedSuperclass
 public abstract class AuditHistory {
 
@@ -76,9 +72,6 @@ public abstract class AuditHistory {
 		return validTo == null;
 	}
 
-	/**
-	 * Closes this history row as of {@code validTo}. Append-only: never clears a prior close.
-	 */
 	public void close(LocalDate validTo) {
 		if (validTo == null) {
 			throw new IllegalArgumentException("validTo is required to close history");

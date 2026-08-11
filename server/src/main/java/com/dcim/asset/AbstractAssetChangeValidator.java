@@ -9,13 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import tools.jackson.databind.JsonNode;
 
-/**
- * Template for type-specific {@link AssetChangeValidator}s: action dispatch, unknown fields,
- * concurrency, and TERMINATE empty-payload checks. Subclasses supply ADD/UPDATE field rules and
- * TERMINATE dependency guards.
- *
- * @param <H> history entity extending {@link AuditHistory}
- */
 public abstract class AbstractAssetChangeValidator<H extends AuditHistory> implements AssetChangeValidator {
 
 	private static final Set<String> ACTIONS = Set.of("ADD", "UPDATE", "TERMINATE");
@@ -89,20 +82,12 @@ public abstract class AbstractAssetChangeValidator<H extends AuditHistory> imple
 		};
 	}
 
-	/**
-	 * Field/shape/clash/reference checks for ADD and UPDATE.
-	 *
-	 * @param prior current history on UPDATE, or {@code null} on ADD
-	 */
 	protected abstract void validateAddOrUpdate(
 			AssetValidateCommand command,
 			JsonNode body,
 			H prior,
 			List<ValidationIssue> issues);
 
-	/**
-	 * Dependency guards after concurrency has succeeded for TERMINATE. Default: no guards.
-	 */
 	protected void validateTerminate(H prior, ValidationContext context, List<ValidationIssue> issues) {
 		// no-op
 	}

@@ -1,37 +1,23 @@
-import { Component, signal } from '@angular/core';
-import { AgGridAngular } from 'ag-grid-angular';
-import type { ColDef } from 'ag-grid-community';
-import { themeQuartz } from 'ag-grid-community';
+import { Component } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-type DemoRow = {
-  asset: string;
-  status: string;
-  historyId: number;
+type NavItem = {
+  label: string;
+  path: string;
 };
 
 @Component({
   selector: 'app-root',
-  imports: [AgGridAngular],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('DCIM');
-  protected readonly theme = themeQuartz;
-
-  protected readonly columnDefs: ColDef<DemoRow>[] = [
-    { field: 'asset', headerName: 'Asset' },
-    { field: 'status', headerName: 'Status' },
-    { field: 'historyId', headerName: 'History ID' },
+  protected readonly navItems: NavItem[] = [
+    { label: 'Data Center', path: '/data-center' },
+    { label: 'Connectivity', path: '/connectivity' },
+    { label: 'Change Spec', path: '/change-spec' },
+    { label: 'Firm', path: '/firm' },
+    { label: 'Billing', path: '/billing' },
   ];
-
-  protected readonly rowData: DemoRow[] = [
-    { asset: 'a1', status: 'staged', historyId: 1 },
-    { asset: 'a2', status: 'modified', historyId: 3 },
-  ];
-
-  protected readonly defaultColDef: ColDef = {
-    flex: 1,
-    minWidth: 120,
-  };
 }

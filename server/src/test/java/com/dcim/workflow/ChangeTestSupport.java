@@ -36,10 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Shared Spring Boot fixtures for change-workflow tests: stage/apply helpers, JSON payloads,
- * and hierarchy seeds. Subclasses inherit the test context (no need to repeat annotations).
- */
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
@@ -148,8 +144,6 @@ public abstract class ChangeTestSupport {
 		return map;
 	}
 
-	// ---------------------------------------------------------------- staging / apply
-
 	protected ChangeDto stage(
 			AssetType assetType,
 			ChangeAction action,
@@ -237,8 +231,6 @@ public abstract class ChangeTestSupport {
 		};
 	}
 
-	// ---------------------------------------------------------------- organization seeds
-
 	protected Long seedFirm(String name) {
 		return applyAdd(AssetType.FIRM, json(Map.of("firmName", name))).assetIdentityId();
 	}
@@ -264,8 +256,6 @@ public abstract class ChangeTestSupport {
 	protected Long seedUser(String name) {
 		return applyAdd(AssetType.USER, json(Map.of("userName", name))).assetIdentityId();
 	}
-
-	// ---------------------------------------------------------------- site seeds
 
 	protected Long seedDataCenter(String name) {
 		return applyAdd(AssetType.DATA_CENTER, json(Map.of("dataCenterName", name))).assetIdentityId();
@@ -349,8 +339,6 @@ public abstract class ChangeTestSupport {
 		Long portB = seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 		return new Long[] { portA, portB };
 	}
-
-	// ---------------------------------------------------------------- connectivity seeds
 
 	protected Long seedLatency(String name, String type) {
 		return applyAdd(AssetType.LATENCY, json(Map.of("latencyName", name, "latencyType", type)))

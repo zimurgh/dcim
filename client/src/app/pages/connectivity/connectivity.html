@@ -1,0 +1,22 @@
+<section class="flex flex-col gap-4">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold tracking-tight">Connectivity</h1>
+    <p class="text-sm text-muted-foreground">
+      Cross connects with related market data feeds, cables, and documents.
+    </p>
+  </header>
+
+  <div class="h-[36rem] overflow-hidden rounded-lg border border-border">
+    <ag-grid-angular
+      class="h-full w-full"
+      [theme]="theme"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [masterDetail]="masterDetail"
+      [detailRowHeight]="detailRowHeight"
+      [detailCellRenderer]="detailCellRenderer"
+      [isRowMaster]="isRowMaster"
+    />
+  </div>
+</section>

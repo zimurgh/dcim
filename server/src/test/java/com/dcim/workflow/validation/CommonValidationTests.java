@@ -6,14 +6,7 @@ import com.dcim.workflow.ChangeDto;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Common rules from DESIGN.md that apply to every asset type: payload shape, required fields, enum
- * parsing, optimistic concurrency, and reference liveness. Exercised through a couple of
- * representative asset types (Data Center, Cage, Latency, Cross Connect).
- */
 class CommonValidationTests extends ValidationTestSupport {
-
-	// ---- payload shape: only known fields ----
 
 	@Test
 	void unknownFieldRejectsAdd() {
@@ -30,8 +23,6 @@ class CommonValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ---- required fields ----
-
 	@Test
 	void missingRequiredFieldRejectsAdd() {
 		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{}");
@@ -45,8 +36,6 @@ class CommonValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ---- enums / kinds ----
 
 	@Test
 	void invalidEnumValueRejectsAdd() {
@@ -64,14 +53,11 @@ class CommonValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ---- concurrency: stale baseHistoryId ----
-
 	@Test
 	void staleBaseHistoryIdRejectsUpdate() {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		Long originalHistoryId = currentHistoryId(AssetType.DATA_CENTER, dataCenterId);
 
-		// Advance the identity so originalHistoryId is no longer current.
 		ChangeDto rename = stageUpdate(
 				AssetType.DATA_CENTER, dataCenterId, originalHistoryId,
 				"{\"dataCenterName\":\"" + unique("NY-Renamed") + "\"}");
@@ -96,7 +82,53 @@ class CommonValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(update.changeId());
 	}
 
-	// ---- reference liveness: not found ----
+	@Test
+	void staleBaseHistoryIdRejectsTerminate() {
+		Long dataCenterId = seedDataCenter(unique("DC"));
+		Long originalHistoryId = currentHistoryId(AssetType.DATA_CENTER, dataCenterId);
+
+		ChangeDto rename = stageUpdate(
+				AssetType.DATA_CENTER, dataCenterId, originalHistoryId,
+				"{\"dataCenterName\":\"" + unique("NY-Renamed") + "\"}");
+		assertApplySucceeds(rename.changeId());
+
+		ChangeDto staleTerminate = stageTerminate(AssetType.DATA_CENTER, dataCenterId, originalHistoryId);
+		assertInvalid(staleTerminate.changeId(), ValidationCodes.STALE_BASE);
+		assertApplyBlocked(staleTerminate.changeId(), ValidationCodes.STALE_BASE);
+	}
+
+	@Test
+	void historyNotFoundRejectsUpdate() {
+		Long dataCenterId = seedDataCenter(unique("DC"));
+		ChangeDto staged = stageUpdate(
+				AssetType.DATA_CENTER, dataCenterId, 999_999_999L,
+				"{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		assertInvalid(staged.changeId(), ValidationCodes.HISTORY_NOT_FOUND);
+		assertApplyBlocked(staged.changeId(), ValidationCodes.HISTORY_NOT_FOUND);
+	}
+
+	@Test
+	void identityMismatchRejectsUpdate() {
+		Long firmA = seedFirm(unique("A"));
+		Long firmB = seedFirm(unique("B"));
+		Long historyA = currentHistoryId(AssetType.FIRM, firmA);
+
+		ChangeDto staged = stageUpdate(
+				AssetType.FIRM, firmB, historyA,
+				"{\"firmName\":\"" + unique("Mismatch") + "\"}");
+		assertInvalid(staged.changeId(), ValidationCodes.IDENTITY_MISMATCH);
+		assertApplyBlocked(staged.changeId(), ValidationCodes.IDENTITY_MISMATCH);
+	}
+
+	@Test
+	void invalidPayloadJsonRejectsValidateAndApply() {
+		ChangeDto draft = changes.createUntracked("{not-json", "tester");
+		ChangeDto staged = changes.promoteToStaged(
+				draft.changeId(), AssetType.DATA_CENTER, com.dcim.workflow.ChangeAction.ADD,
+				null, null, null, "tester");
+		assertInvalid(staged.changeId(), ValidationCodes.INVALID_PAYLOAD);
+		assertApplyBlocked(staged.changeId(), ValidationCodes.INVALID_PAYLOAD);
+	}
 
 	@Test
 	void referenceNotFoundRejectsAdd() {
@@ -114,8 +146,6 @@ class CommonValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ---- reference liveness: not active ----
 
 	@Test
 	void referenceNotActiveRejectsAdd() {

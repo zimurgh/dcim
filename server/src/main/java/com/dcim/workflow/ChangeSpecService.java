@@ -5,8 +5,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import com.dcim.organization.firm.FirmDto;
 import com.dcim.organization.firm.FirmIdentity;
 import com.dcim.organization.firm.FirmIdentityRepository;
+import com.dcim.organization.firm.FirmService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,26 +17,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChangeSpecService {
 
 	private final ChangeSpecRepository specs;
+	private final ChangeSpecViewRepository specViews;
 	private final ChangeSpecItemRepository items;
 	private final ChangeSpecChrecRepository specChrecs;
 	private final ChrecRepository chrecs;
 	private final FirmIdentityRepository firms;
+	private final FirmService firmService;
 	private final ChangeService changes;
 	private final Clock clock;
 
 	ChangeSpecService(
 			ChangeSpecRepository specs,
+			ChangeSpecViewRepository specViews,
 			ChangeSpecItemRepository items,
 			ChangeSpecChrecRepository specChrecs,
 			ChrecRepository chrecs,
 			FirmIdentityRepository firms,
+			FirmService firmService,
 			ChangeService changes,
 			Optional<Clock> clock) {
 		this.specs = specs;
+		this.specViews = specViews;
 		this.items = items;
 		this.specChrecs = specChrecs;
 		this.chrecs = chrecs;
 		this.firms = firms;
+		this.firmService = firmService;
 		this.changes = changes;
 		this.clock = clock.orElse(Clock.systemUTC());
 	}
@@ -58,8 +66,15 @@ public class ChangeSpecService {
 	}
 
 	@Transactional(readOnly = true)
+	public List<ChangeSpecDto> listAll() {
+		return specViews.findAllOrderByChangeSpecIdAsc().stream()
+				.map(this::toDto)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
 	public List<ChangeSpecDto> listForFirm(Long ownerFirmId) {
-		return specs.findByOwnerFirm_FirmIdOrderByChangeSpecIdAsc(ownerFirmId).stream()
+		return specViews.findByOwnerFirmIdOrderByChangeSpecIdAsc(ownerFirmId).stream()
 				.map(this::toDto)
 				.toList();
 	}
@@ -117,6 +132,7 @@ public class ChangeSpecService {
 			throw new WorkflowException("At least one CHREC is required to enter Pending Billing");
 		}
 		spec.setStatus(ChangeSpecStatus.PENDING_BILLING);
+		specs.flush();
 		return toDto(spec);
 	}
 
@@ -138,6 +154,7 @@ public class ChangeSpecService {
 			changes.commitStaged(staged, appliedBy);
 		}
 		spec.setStatus(ChangeSpecStatus.APPLIED);
+		specs.flush();
 		return toDto(spec);
 	}
 
@@ -156,6 +173,7 @@ public class ChangeSpecService {
 	public ChangeSpecDto cancel(Long changeSpecId) {
 		ChangeSpec spec = requireMutable(changeSpecId);
 		spec.setStatus(ChangeSpecStatus.CANCELLED);
+		specs.flush();
 		return toDto(spec);
 	}
 
@@ -179,19 +197,53 @@ public class ChangeSpecService {
 	}
 
 	private ChangeSpecDto toDto(ChangeSpec spec) {
-		List<Long> changeIds = items.findByChangeSpec_ChangeSpecId(spec.getChangeSpecId()).stream()
-				.map(item -> item.getChangeIdentity().getChangeId())
-				.toList();
-		List<ChangeSpecDto.ChrecDto> linked = specChrecs.findByChangeSpec_ChangeSpecId(spec.getChangeSpecId()).stream()
-				.map(link -> ChangeSpecDto.ChrecDto.from(link.getChrec()))
-				.toList();
-		return new ChangeSpecDto(
+		String ownerFirmName = firmService.findCurrent(spec.getOwnerFirm().getFirmId())
+				.map(FirmDto::firmName)
+				.orElseThrow(() -> new WorkflowException(
+						"Owner firm not found: " + spec.getOwnerFirm().getFirmId()));
+		return toDto(
 				spec.getChangeSpecId(),
 				spec.getOwnerFirm().getFirmId(),
+				ownerFirmName,
 				spec.getName(),
 				spec.getStatus(),
 				spec.getCreatedAt(),
-				spec.getCreatedBy(),
+				spec.getCreatedBy());
+	}
+
+	private ChangeSpecDto toDto(ChangeSpecView view) {
+		return toDto(
+				view.getChangeSpecId(),
+				view.getOwnerFirmId(),
+				view.getOwnerFirmName(),
+				view.getName(),
+				view.getStatus(),
+				view.getCreatedAt(),
+				view.getCreatedBy());
+	}
+
+	private ChangeSpecDto toDto(
+			Long changeSpecId,
+			Long ownerFirmId,
+			String ownerFirmName,
+			String name,
+			ChangeSpecStatus status,
+			Instant createdAt,
+			String createdBy) {
+		List<Long> changeIds = items.findByChangeSpec_ChangeSpecId(changeSpecId).stream()
+				.map(item -> item.getChangeIdentity().getChangeId())
+				.toList();
+		List<ChangeSpecDto.ChrecDto> linked = specChrecs.findByChangeSpec_ChangeSpecId(changeSpecId).stream()
+				.map(link -> ChangeSpecDto.ChrecDto.from(link.getChrec()))
+				.toList();
+		return new ChangeSpecDto(
+				changeSpecId,
+				ownerFirmId,
+				ownerFirmName,
+				name,
+				status,
+				createdAt,
+				createdBy,
 				changeIds,
 				linked);
 	}

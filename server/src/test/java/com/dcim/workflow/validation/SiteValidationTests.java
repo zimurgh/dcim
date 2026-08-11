@@ -8,14 +8,7 @@ import com.dcim.workflow.ChangeDto;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Site rules from DESIGN.md: name-clash scopes for every level of the spatial tree, and the
- * terminate-blocked-by-live-children guard chain (DC -> Cage -> Rack -> Device -> Port -> Cable), plus
- * the type catalogs (Rack Device Type, Rack Device Port Type).
- */
 class SiteValidationTests extends ValidationTestSupport {
-
-	// ================================================================== clash: Data Center (global)
 
 	@Test
 	void dataCenterNameAddSucceedsWhenUnique() {
@@ -33,8 +26,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== clash: Cage (scoped to Data Center)
 
 	@Test
 	void cageNameAddSucceedsWhenUniqueWithinDataCenter() {
@@ -70,8 +61,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== clash: Rack (scoped to Cage)
-
 	@Test
 	void rackNameAddSucceedsWhenUniqueWithinCage() {
 		Long dataCenterId = seedDataCenter(unique("DC"));
@@ -92,8 +81,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== clash: Rack Device (scoped to Rack)
 
 	@Test
 	void rackDeviceNameAddSucceedsWhenUniqueWithinRack() {
@@ -122,8 +109,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Rack Device Port (scoped to Device)
-
 	@Test
 	void rackDevicePortNameAddSucceedsWhenUniqueWithinDevice() {
 		SiteDeviceFixture device = seedDeviceInNewTree();
@@ -151,8 +136,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Rack Device Type (global)
-
 	@Test
 	void rackDeviceTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
@@ -174,8 +157,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: Rack Device Port Type (global)
-
 	@Test
 	void rackDevicePortTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
@@ -193,8 +174,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== terminate: Data Center <- Cage
 
 	@Test
 	void terminateDataCenterBlockedByLiveCage() {
@@ -214,8 +193,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== terminate: Cage <- Rack
 
 	@Test
 	void terminateCageBlockedByLiveRack() {
@@ -238,8 +215,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== terminate: Rack <- Device
-
 	@Test
 	void terminateRackBlockedByLiveDevice() {
 		Long rackId = seedRackInNewTree();
@@ -260,8 +235,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== terminate: Device <- Port
-
 	@Test
 	void terminateRackDeviceBlockedByLivePort() {
 		SiteDeviceFixture device = seedDeviceInNewTree();
@@ -281,8 +254,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== terminate: Port <- Cable
 
 	@Test
 	void terminateRackDevicePortBlockedByLiveCable() {
@@ -305,8 +276,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== terminate: Rack Device Type <- Device
-
 	@Test
 	void terminateRackDeviceTypeBlockedByActiveDevice() {
 		Long rackId = seedRackInNewTree();
@@ -327,8 +296,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== terminate: Rack Device Port Type <- Port
-
 	@Test
 	void terminateRackDevicePortTypeBlockedByActivePort() {
 		SiteDeviceFixture device = seedDeviceInNewTree();
@@ -348,8 +315,6 @@ class SiteValidationTests extends ValidationTestSupport {
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
-
-	// ================================================================== batch terminate: parent + type FKs
 
 	@Test
 	void batchTerminateDeviceAndItsPortsTogetherOnChangeSpecPasses() {

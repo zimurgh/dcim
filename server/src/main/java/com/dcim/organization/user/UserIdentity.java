@@ -2,9 +2,6 @@ package com.dcim.organization.user;
 
 import jakarta.persistence.*;
 
-/**
- * Stable user identity across history revisions.
- */
 @Entity
 @Table(name = "T_USER_IDENTITY")
 public class UserIdentity {

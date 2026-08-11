@@ -8,14 +8,7 @@ import com.dcim.workflow.ChangeDto;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Organization rules from DESIGN.md: Firm / Exchange / Market Segment / User name clashes, Firm and
- * Market Segment terminate guards, and the User exception (terminate allowed even after the user has
- * applied changes, since historical {@code appliedBy} never blocks).
- */
 class OrganizationValidationTests extends ValidationTestSupport {
-
-	// ================================================================== clash: Firm name (global)
 
 	@Test
 	void firmNameAddSucceedsWhenUnique() {
@@ -33,8 +26,6 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== clash: Exchange name (global)
 
 	@Test
 	void exchangeNameAddSucceedsWhenUnique() {
@@ -68,8 +59,6 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertApplySucceeds(staged.changeId());
 	}
 
-	// ================================================================== clash: Market Segment name (global)
-
 	@Test
 	void marketSegmentNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
@@ -91,8 +80,6 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
-	// ================================================================== clash: User name (global)
-
 	@Test
 	void userNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(AssetType.USER, "{\"userName\":\"" + unique("alice") + "\"}");
@@ -109,8 +96,6 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
-
-	// ================================================================== terminate: Firm <- Cross Connect / Feed
 
 	@Test
 	void terminateFirmSucceedsWhenUnreferenced() {
@@ -143,8 +128,6 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
 
-	// ================================================================== terminate: Market Segment <- Cross Connect
-
 	@Test
 	void terminateMarketSegmentSucceedsWhenUnreferenced() {
 		Long marketSegmentId = seedMarketSegment(unique("Equities"), "EQUITIES_INDEX");
@@ -173,13 +156,10 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
 
-	// ================================================================== User terminate: not blocked by history
-
 	@Test
 	void terminateUserAllowedEvenAfterApplyingChanges() {
 		Long historyAuthorUserId = seedUser(unique("author"));
 
-		// The seeded user is used as appliedBy on an unrelated change, i.e. it has authored history.
 		ChangeDto dataCenterAdd = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeDto applied = changes.applyStaged(dataCenterAdd.changeId(), historyAuthorUserId);
 		assertThat(applied.appliedBy()).isEqualTo(historyAuthorUserId);

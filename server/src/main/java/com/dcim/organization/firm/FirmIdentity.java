@@ -2,9 +2,6 @@ package com.dcim.organization.firm;
 
 import jakarta.persistence.*;
 
-/**
- * Stable firm identity across history revisions.
- */
 @Entity
 @Table(name = "T_FIRM_IDENTITY")
 public class FirmIdentity {

@@ -1,8 +1,5 @@
 package com.dcim.asset;
 
-/**
- * Stable validation issue codes shared across domain validators.
- */
 public final class ValidationCodes {
 
 	public static final String UNKNOWN_FIELD = "UNKNOWN_FIELD";

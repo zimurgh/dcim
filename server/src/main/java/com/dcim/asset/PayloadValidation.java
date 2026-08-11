@@ -10,9 +10,6 @@ import java.util.function.Predicate;
 
 import tools.jackson.databind.JsonNode;
 
-/**
- * Shared payload-shape checks for validators.
- */
 public final class PayloadValidation {
 
 	private PayloadValidation() {
@@ -65,10 +62,6 @@ public final class PayloadValidation {
 		return node.asLong();
 	}
 
-	/**
-	 * Returns the field's numeric value, recording {@code MISSING_FIELD} when absent or
-	 * {@code INVALID_VALUE} when present but not a number.
-	 */
 	public static Long requiredLong(JsonNode body, String field, List<ValidationIssue> issues) {
 		JsonNode node = body.get(field);
 		if (node == null || node.isNull()) {
@@ -82,18 +75,10 @@ public final class PayloadValidation {
 		return history != null && history.isCurrent() && "Active".equals(history.getStatus());
 	}
 
-	/**
-	 * True when a committed status (as returned by a lookup service's DTO) represents a live row.
-	 */
 	public static boolean isActiveStatus(String status) {
 		return "Active".equals(status);
 	}
 
-	/**
-	 * Records a {@code REFERENCE_NOT_FOUND} or {@code REFERENCE_NOT_ACTIVE} issue when {@code status}
-	 * (the committed status of the referenced row, or {@code null} when no current row exists) is not
-	 * {@code Active}.
-	 */
 	public static void requireActiveReference(String field, Long id, String status, List<ValidationIssue> issues) {
 		if (status == null) {
 			issues.add(ValidationIssue.of(
@@ -105,10 +90,6 @@ public final class PayloadValidation {
 		}
 	}
 
-	/**
-	 * Resolves a text field required on {@code ADD}, and optional-with-fallback to {@code priorValue}
-	 * on {@code UPDATE} (validated only when explicitly supplied with a non-null value).
-	 */
 	public static String resolveRequiredText(
 			JsonNode body, String field, boolean isAdd, String priorValue, List<ValidationIssue> issues) {
 		boolean present = body.hasNonNull(field);
@@ -123,10 +104,6 @@ public final class PayloadValidation {
 		return value;
 	}
 
-	/**
-	 * Resolves a non-nullable reference field required on {@code ADD}, and optional-with-fallback to
-	 * {@code priorId} on {@code UPDATE} (validated only when explicitly supplied with a non-null value).
-	 */
 	public static Long resolveRequiredReference(
 			JsonNode body,
 			String field,
@@ -149,9 +126,6 @@ public final class PayloadValidation {
 		return id;
 	}
 
-	/**
-	 * Validates a nullable reference field: checked only when explicitly present with a non-null value.
-	 */
 	public static void validateOptionalReference(
 			JsonNode body, String field, List<ValidationIssue> issues, Function<Long, String> statusLookup) {
 		if (!body.has(field)) {
@@ -163,11 +137,6 @@ public final class PayloadValidation {
 		}
 	}
 
-	/**
-	 * Shared UPDATE/TERMINATE concurrency check: resolves {@code baseHistoryId} and verifies it belongs
-	 * to {@code assetIdentityId} and is still the current row. Returns {@code null} (after recording an
-	 * issue) when any check fails.
-	 */
 	public static <T> T validateConcurrency(
 			Long assetIdentityId,
 			Long baseHistoryId,

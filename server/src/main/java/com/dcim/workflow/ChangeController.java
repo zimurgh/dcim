@@ -1,5 +1,7 @@
 package com.dcim.workflow;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +26,11 @@ class ChangeController {
 	@PostMapping
 	ChangeDto create(@RequestBody CreateUntrackedRequest request) {
 		return wrap(() -> changes.createUntracked(request.body(), request.actor()));
+	}
+
+	@GetMapping
+	List<ChangeDto> list() {
+		return changes.listAll();
 	}
 
 	@GetMapping("/{changeId}")

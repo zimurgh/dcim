@@ -4,9 +4,6 @@ import java.util.List;
 
 import com.dcim.asset.ValidationIssue;
 
-/**
- * Staged change failed validation; apply must not mutate the ledger.
- */
 public class ValidationFailedException extends WorkflowException {
 
 	private final List<ValidationIssue> issues;

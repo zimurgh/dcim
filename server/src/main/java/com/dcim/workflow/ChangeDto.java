@@ -16,6 +16,8 @@ public record ChangeDto(
 		Instant createdOrStagedAt,
 		String actor,
 		Long appliedBy,
+		String appliedByName,
+		Long changeSpecId,
 		List<HistoryLinkDto> historyLinks) {
 
 	public record HistoryLinkDto(AssetType assetType, Long historyId, HistoryLinkRole role) {
@@ -35,6 +37,8 @@ public record ChangeDto(
 				row.getCreatedAt(),
 				row.getCreatedBy(),
 				null,
+				null,
+				null,
 				List.of());
 	}
 
@@ -51,6 +55,8 @@ public record ChangeDto(
 				row.getPayload().getChangePayloadId(),
 				row.getStagedAt(),
 				row.getStagedBy(),
+				null,
+				null,
 				null,
 				List.of());
 	}
@@ -73,6 +79,27 @@ public record ChangeDto(
 				row.getAppliedAt(),
 				null,
 				row.getAppliedBy(),
+				null,
+				null,
 				links);
+	}
+
+	static ChangeDto from(ChangeView view) {
+		return new ChangeDto(
+				view.getChangeId(),
+				view.getStage(),
+				view.getStatusLabel(),
+				view.getBody(),
+				view.getAssetType(),
+				view.getAction(),
+				view.getAssetIdentityId(),
+				view.getBaseHistoryId(),
+				view.getChangePayloadId(),
+				view.getEventAt(),
+				view.getActor(),
+				view.getAppliedBy(),
+				view.getAppliedByName(),
+				view.getChangeSpecId(),
+				List.of());
 	}
 }
