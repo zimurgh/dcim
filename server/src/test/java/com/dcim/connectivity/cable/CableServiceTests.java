@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeTestSupport;
 
@@ -16,7 +15,7 @@ class CableServiceTests extends ChangeTestSupport {
 	void addsCableThroughChangeWorkflow() {
 		CableSeed seed = seedCableDeps();
 		ChangeDto applied = applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				json(Map.of(
 						"cableName", "CBL-1",
 						"portAId", seed.portAId(),
@@ -40,7 +39,7 @@ class CableServiceTests extends ChangeTestSupport {
 		Long sparePortId = seedRackDevicePort(unique("eth"), seed.deviceId(), seed.portTypeId());
 
 		ChangeDto added = applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				json(Map.of(
 						"cableName", "CBL-1",
 						"portAId", seed.portAId(),
@@ -48,7 +47,7 @@ class CableServiceTests extends ChangeTestSupport {
 						"crossConnectId", seed.crossConnectId())));
 
 		applyUpdateCurrent(
-				AssetType.CABLE,
+				"CABLE",
 				added.assetIdentityId(),
 				json(fields(
 						"cableName", "CBL-1B",
@@ -70,14 +69,14 @@ class CableServiceTests extends ChangeTestSupport {
 	void terminatesCableThroughChangeWorkflow() {
 		CableSeed seed = seedCableDeps();
 		ChangeDto added = applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				json(Map.of(
 						"cableName", "CBL-1",
 						"portAId", seed.portAId(),
 						"portBId", seed.portBId(),
 						"crossConnectId", seed.crossConnectId())));
 
-		applyTerminateCurrent(AssetType.CABLE, added.assetIdentityId());
+		applyTerminateCurrent("CABLE", added.assetIdentityId());
 
 		CableDto current = cables.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");

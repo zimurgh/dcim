@@ -2,7 +2,6 @@ package com.dcim.workflow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -12,39 +11,39 @@ class AssetApplyOrderTests {
 
 	@Test
 	void dependentsRankBeforeParents() {
-		assertThat(AssetApplyOrder.rank(AssetType.RACK_DEVICE_PORT))
-				.isLessThan(AssetApplyOrder.rank(AssetType.RACK_DEVICE));
-		assertThat(AssetApplyOrder.rank(AssetType.RACK_DEVICE))
-				.isLessThan(AssetApplyOrder.rank(AssetType.RACK));
-		assertThat(AssetApplyOrder.rank(AssetType.RACK))
-				.isLessThan(AssetApplyOrder.rank(AssetType.CAGE));
-		assertThat(AssetApplyOrder.rank(AssetType.CAGE))
-				.isLessThan(AssetApplyOrder.rank(AssetType.DATA_CENTER));
-		assertThat(AssetApplyOrder.rank(AssetType.CABLE))
-				.isLessThan(AssetApplyOrder.rank(AssetType.CROSS_CONNECT));
-		assertThat(AssetApplyOrder.rank(AssetType.DOCUMENT))
-				.isLessThan(AssetApplyOrder.rank(AssetType.CROSS_CONNECT));
-		assertThat(AssetApplyOrder.rank(AssetType.MARKET_DATA_FEED))
-				.isLessThan(AssetApplyOrder.rank(AssetType.CROSS_CONNECT));
-		assertThat(AssetApplyOrder.rank(AssetType.CROSS_CONNECT))
-				.isLessThan(AssetApplyOrder.rank(AssetType.FIRM));
-		assertThat(AssetApplyOrder.rank(AssetType.FIRM))
-				.isLessThan(AssetApplyOrder.rank(AssetType.USER));
+		assertThat(AssetApplyOrder.rank("RACK_DEVICE_PORT"))
+				.isLessThan(AssetApplyOrder.rank("RACK_DEVICE"));
+		assertThat(AssetApplyOrder.rank("RACK_DEVICE"))
+				.isLessThan(AssetApplyOrder.rank("RACK"));
+		assertThat(AssetApplyOrder.rank("RACK"))
+				.isLessThan(AssetApplyOrder.rank("CAGE"));
+		assertThat(AssetApplyOrder.rank("CAGE"))
+				.isLessThan(AssetApplyOrder.rank("DATA_CENTER"));
+		assertThat(AssetApplyOrder.rank("CABLE"))
+				.isLessThan(AssetApplyOrder.rank("CROSS_CONNECT"));
+		assertThat(AssetApplyOrder.rank("DOCUMENT"))
+				.isLessThan(AssetApplyOrder.rank("CROSS_CONNECT"));
+		assertThat(AssetApplyOrder.rank("MARKET_DATA_FEED"))
+				.isLessThan(AssetApplyOrder.rank("CROSS_CONNECT"));
+		assertThat(AssetApplyOrder.rank("CROSS_CONNECT"))
+				.isLessThan(AssetApplyOrder.rank("FIRM"));
+		assertThat(AssetApplyOrder.rank("FIRM"))
+				.isLessThan(AssetApplyOrder.rank("USER"));
 	}
 
 	@Test
 	void everyAssetTypeHasARank() {
-		for (AssetType type : AssetType.values()) {
+		for (String type : AssetApplyOrder.knownCodes()) {
 			assertThat(AssetApplyOrder.rank(type)).isPositive();
 		}
 	}
 
 	@Test
 	void sortIsStableByChangeIdWithinSameRank() {
-		List<AssetType> ordered = Arrays.stream(AssetType.values())
-				.sorted(Comparator.comparingInt(AssetApplyOrder::rank).thenComparing(Enum::name))
+		List<String> ordered = AssetApplyOrder.knownCodes().stream()
+				.sorted(Comparator.comparingInt(AssetApplyOrder::rank).thenComparing(code -> code))
 				.toList();
-		assertThat(ordered.getFirst()).isEqualTo(AssetType.RACK_DEVICE_PORT);
-		assertThat(ordered.getLast()).isEqualTo(AssetType.USER);
+		assertThat(ordered.getFirst()).isEqualTo("RACK_DEVICE_PORT");
+		assertThat(ordered.getLast()).isEqualTo("USER");
 	}
 }

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeTestSupport;
 
@@ -15,7 +14,7 @@ class ExchangeServiceTests extends ChangeTestSupport {
 	@Test
 	void addsExchangeThroughChangeWorkflow() {
 		ChangeDto applied = applyAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				json(Map.of(
 						"exchangeName", "Chicago Board Options Exchange",
 						"exchangeCode", "CBOE",
@@ -36,7 +35,7 @@ class ExchangeServiceTests extends ChangeTestSupport {
 	@Test
 	void updatesExchangeThroughChangeWorkflow() {
 		ChangeDto added = applyAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				json(Map.of(
 						"exchangeName", "Chicago Board Options Exchange",
 						"exchangeCode", "CBOE",
@@ -44,7 +43,7 @@ class ExchangeServiceTests extends ChangeTestSupport {
 						"exchangeType", "OPTIONS")));
 
 		applyUpdateCurrent(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				added.assetIdentityId(),
 				json(Map.of(
 						"exchangeName", "Cboe Options Exchange",
@@ -64,14 +63,14 @@ class ExchangeServiceTests extends ChangeTestSupport {
 	@Test
 	void terminatesExchangeThroughChangeWorkflow() {
 		ChangeDto added = applyAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				json(Map.of(
 						"exchangeName", "Chicago Board Options Exchange",
 						"exchangeCode", "CBOE",
 						"exchangeAbbreviation", "CBOE",
 						"exchangeType", "OPTIONS")));
 
-		applyTerminateCurrent(AssetType.EXCHANGE, added.assetIdentityId());
+		applyTerminateCurrent("EXCHANGE", added.assetIdentityId());
 
 		ExchangeDto current = exchanges.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");

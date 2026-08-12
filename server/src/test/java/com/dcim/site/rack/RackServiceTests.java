@@ -8,7 +8,6 @@ import java.util.Map;
 
 import com.dcim.site.cage.CageIdentity;
 import com.dcim.site.cage.CageIdentityRepository;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,7 @@ class RackServiceTests extends ChangeTestSupport {
 	void addsRackThroughChangeWorkflow() {
 		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
 
-		Long rackId = applyAdd(AssetType.RACK, json(Map.of("rackName", "R01", "cageId", cageId)))
+		Long rackId = applyAdd("RACK", json(Map.of("rackName", "R01", "cageId", cageId)))
 				.assetIdentityId();
 
 		RackDto current = racks.findCurrent(rackId).orElseThrow();
@@ -77,7 +76,7 @@ class RackServiceTests extends ChangeTestSupport {
 		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
 		Long rackId = seedRack("R01", cageId);
 
-		applyUpdateCurrent(AssetType.RACK, rackId, json(Map.of("rackName", "R02", "cageId", cageId)));
+		applyUpdateCurrent("RACK", rackId, json(Map.of("rackName", "R02", "cageId", cageId)));
 
 		RackDto current = racks.findCurrent(rackId).orElseThrow();
 		assertThat(current.rackName()).isEqualTo("R02");
@@ -98,7 +97,7 @@ class RackServiceTests extends ChangeTestSupport {
 		Long cageId = seedCage("Cage-A", seedDataCenter("NY4"));
 		Long rackId = seedRack("R01", cageId);
 
-		applyTerminateCurrent(AssetType.RACK, rackId);
+		applyTerminateCurrent("RACK", rackId);
 
 		RackDto current = racks.findCurrent(rackId).orElseThrow();
 		assertThat(current.rackName()).isEqualTo("R01");

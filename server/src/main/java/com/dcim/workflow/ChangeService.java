@@ -17,6 +17,8 @@ import com.dcim.asset.AssetHistoryLink;
 import com.dcim.asset.AssetValidateCommand;
 import com.dcim.asset.ValidationContext;
 import com.dcim.asset.ValidationIssue;
+import com.dcim.workflow.assettype.AssetTypeIdentity;
+import com.dcim.workflow.assettype.AssetTypeService;
 
 import jakarta.persistence.*;
 
@@ -35,6 +37,7 @@ public class ChangeService {
 	private final ChangeActionStatusRepository actionStatuses;
 	private final ChangeSpecItemRepository specItems;
 	private final ChangeViewRepository changeViews;
+	private final AssetTypeService assetTypes;
 	private final List<AssetChangeApplier> appliers;
 	private final List<AssetChangeValidator> validators;
 	private final EntityManager entityManager;
@@ -50,6 +53,7 @@ public class ChangeService {
 			ChangeActionStatusRepository actionStatuses,
 			ChangeSpecItemRepository specItems,
 			ChangeViewRepository changeViews,
+			AssetTypeService assetTypes,
 			List<AssetChangeApplier> appliers,
 			List<AssetChangeValidator> validators,
 			EntityManager entityManager,
@@ -63,6 +67,7 @@ public class ChangeService {
 		this.actionStatuses = actionStatuses;
 		this.specItems = specItems;
 		this.changeViews = changeViews;
+		this.assetTypes = assetTypes;
 		this.appliers = List.copyOf(appliers);
 		this.validators = List.copyOf(validators);
 		this.entityManager = entityManager;
@@ -97,13 +102,13 @@ public class ChangeService {
 				.orElseThrow(() -> new WorkflowException("No open change to amend: " + changeId));
 		ChangePayload payload = payloads.save(new ChangePayload(row.getChangeIdentity(), nextBody, now));
 		row.setPayload(payload);
-		return ChangeDto.staged(row, statusLabel(row.getAction(), ChangeStage.STAGED));
+		return toStagedDto(row);
 	}
 
 	@Transactional
 	public ChangeDto promoteToStaged(
 			Long changeId,
-			AssetType assetType,
+			String assetTypeCode,
 			ChangeAction action,
 			Long assetIdentityId,
 			Long baseHistoryId,
@@ -111,9 +116,10 @@ public class ChangeService {
 			String actor) {
 		ChangeUntracked open = untracked.findById(changeId)
 				.orElseThrow(() -> new WorkflowException("Change is not untracked: " + changeId));
-		if (assetType == null || action == null) {
+		if (action == null) {
 			throw new WorkflowException("Staging requires assetType and action");
 		}
+		AssetTypeIdentity assetType = assetTypes.requireIdentity(assetTypeCode);
 		if (action != ChangeAction.ADD && (assetIdentityId == null || baseHistoryId == null)) {
 			throw new WorkflowException("Update/Terminate staging requires assetIdentityId and baseHistoryId");
 		}
@@ -137,7 +143,7 @@ public class ChangeService {
 				now,
 				actor);
 		entityManager.persist(row);
-		return ChangeDto.staged(row, statusLabel(action, ChangeStage.STAGED));
+		return toStagedDto(row);
 	}
 
 	@Transactional
@@ -198,11 +204,12 @@ public class ChangeService {
 		Instant now = Instant.now(clock);
 		LocalDate validOn = LocalDate.ofInstant(now, ZoneOffset.UTC);
 		String committedStatus = statusLabel(open.getAction(), ChangeStage.COMMITTED);
+		String assetTypeCode = assetTypes.requireCode(open.getAssetType());
 
 		AssetApplyResult applied;
 		try {
-			applied = applierFor(open.getAssetType()).apply(new AssetApplyCommand(
-					open.getAssetType().name(),
+			applied = applierFor(assetTypeCode).apply(new AssetApplyCommand(
+					assetTypeCode,
 					open.getAction().name(),
 					open.getPayload().getBody(),
 					open.getAssetIdentityId(),
@@ -235,11 +242,15 @@ public class ChangeService {
 							open.getAssetType(),
 							link.historyId(),
 							role));
-					return new ChangeDto.HistoryLinkDto(open.getAssetType(), link.historyId(), role);
+					return new ChangeDto.HistoryLinkDto(
+							assetTypeCode,
+							open.getAssetType().getAssetTypeId(),
+							link.historyId(),
+							role);
 				})
 				.toList();
 
-		return ChangeDto.committed(row, committedStatus, applied.assetIdentityId(), links);
+		return ChangeDto.committed(row, assetTypeCode, committedStatus, applied.assetIdentityId(), links);
 	}
 
 	@Transactional(readOnly = true)
@@ -257,19 +268,23 @@ public class ChangeService {
 		}
 		Optional<ChangeStaged> openStaged = staged.findById(changeId);
 		if (openStaged.isPresent()) {
-			ChangeStaged row = openStaged.get();
-			return Optional.of(ChangeDto.staged(row, statusLabel(row.getAction(), ChangeStage.STAGED)));
+			return Optional.of(toStagedDto(openStaged.get()));
 		}
-		return committed.findById(changeId).map(row -> ChangeDto.committed(
-				row,
-				statusLabel(row.getAction(), ChangeStage.COMMITTED),
-				null,
-				committedHistory.findByCommitted_ChangeId(changeId).stream()
-						.map(link -> new ChangeDto.HistoryLinkDto(
-								link.getAssetType(),
-								link.getHistoryId(),
-								link.getRole()))
-						.toList()));
+		return committed.findById(changeId).map(row -> {
+			String assetTypeCode = assetTypes.requireCode(row.getAssetType());
+			return ChangeDto.committed(
+					row,
+					assetTypeCode,
+					statusLabel(row.getAction(), ChangeStage.COMMITTED),
+					null,
+					committedHistory.findByCommitted_ChangeId(changeId).stream()
+							.map(link -> new ChangeDto.HistoryLinkDto(
+									assetTypes.requireCode(link.getAssetType()),
+									link.getAssetType().getAssetTypeId(),
+									link.getHistoryId(),
+									link.getRole()))
+							.toList());
+		});
 	}
 
 	ChangeStaged requireStaged(Long changeId) {
@@ -285,14 +300,22 @@ public class ChangeService {
 		return rows;
 	}
 
+	private ChangeDto toStagedDto(ChangeStaged row) {
+		return ChangeDto.staged(
+				row,
+				assetTypes.requireCode(row.getAssetType()),
+				statusLabel(row.getAction(), ChangeStage.STAGED));
+	}
+
 	private List<ValidationIssue> validate(ChangeStaged open, ValidationContext context) {
+		String assetTypeCode = assetTypes.requireCode(open.getAssetType());
 		AssetValidateCommand command = new AssetValidateCommand(
-				open.getAssetType().name(),
+				assetTypeCode,
 				open.getAction().name(),
 				open.getPayload().getBody(),
 				open.getAssetIdentityId(),
 				open.getBaseHistoryId());
-		return validatorFor(open.getAssetType()).validate(command, context);
+		return validatorFor(assetTypeCode).validate(command, context);
 	}
 
 	private ValidationContext batchContextFor(Long changeId) {
@@ -311,25 +334,25 @@ public class ChangeService {
 	private ValidationContext batchContext(List<ChangeStaged> membership) {
 		List<ValidationContext.BatchIntent> intents = membership.stream()
 				.map(row -> new ValidationContext.BatchIntent(
-						row.getAssetType().name(),
+						assetTypes.requireCode(row.getAssetType()),
 						row.getAction().name(),
 						row.getAssetIdentityId()))
 				.toList();
 		return new ValidationContext(intents);
 	}
 
-	private AssetChangeApplier applierFor(AssetType assetType) {
+	private AssetChangeApplier applierFor(String assetTypeCode) {
 		return appliers.stream()
-				.filter(applier -> applier.supports(assetType.name()))
+				.filter(applier -> applier.supports(assetTypeCode))
 				.findFirst()
-				.orElseThrow(() -> new WorkflowException("No asset applier for " + assetType));
+				.orElseThrow(() -> new WorkflowException("No asset applier for " + assetTypeCode));
 	}
 
-	private AssetChangeValidator validatorFor(AssetType assetType) {
+	private AssetChangeValidator validatorFor(String assetTypeCode) {
 		return validators.stream()
-				.filter(validator -> validator.supports(assetType.name()))
+				.filter(validator -> validator.supports(assetTypeCode))
 				.findFirst()
-				.orElseThrow(() -> new WorkflowException("No asset validator for " + assetType));
+				.orElseThrow(() -> new WorkflowException("No asset validator for " + assetTypeCode));
 	}
 
 	private static HistoryLinkRole toRole(String role) {

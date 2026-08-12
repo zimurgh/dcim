@@ -10,7 +10,6 @@ import com.dcim.site.rackdevice.RackDeviceIdentity;
 import com.dcim.site.rackdevice.RackDeviceIdentityRepository;
 import com.dcim.site.rackdeviceporttype.RackDevicePortTypeIdentity;
 import com.dcim.site.rackdeviceporttype.RackDevicePortTypeIdentityRepository;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -68,7 +67,7 @@ class RackDevicePortServiceTests extends ChangeTestSupport {
 		Long portTypeId = seedRackDevicePortType("Copper");
 
 		Long portId = applyAdd(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				json(Map.of(
 						"rackDevicePortName", "eth0",
 						"rackDeviceId", device.rackDeviceId(),
@@ -96,7 +95,7 @@ class RackDevicePortServiceTests extends ChangeTestSupport {
 		Long portId = seedRackDevicePort("eth0", device.rackDeviceId(), portTypeId);
 
 		applyUpdateCurrent(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				portId,
 				json(Map.of(
 						"rackDevicePortName", "eth1",
@@ -124,7 +123,7 @@ class RackDevicePortServiceTests extends ChangeTestSupport {
 		Long portTypeId = seedRackDevicePortType("Copper");
 		Long portId = seedRackDevicePort("eth0", device.rackDeviceId(), portTypeId);
 
-		applyTerminateCurrent(AssetType.RACK_DEVICE_PORT, portId);
+		applyTerminateCurrent("RACK_DEVICE_PORT", portId);
 
 		RackDevicePortDto current = rackDevicePorts.findCurrent(portId).orElseThrow();
 		assertThat(current.rackDevicePortName()).isEqualTo("eth0");

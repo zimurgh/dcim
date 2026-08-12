@@ -2,7 +2,6 @@ package com.dcim.connectivity.crossconnect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeTestSupport;
 
@@ -14,7 +13,7 @@ class CrossConnectServiceTests extends ChangeTestSupport {
 	void addsCrossConnectThroughChangeWorkflow() {
 		XcDeps deps = seedXcDeps();
 		Long providerFirmId = seedFirm(unique("Provider"));
-		ChangeDto applied = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
+		ChangeDto applied = applyAdd("CROSS_CONNECT", xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
 		CrossConnectDto current = crossConnects.findCurrent(applied.assetIdentityId()).orElseThrow();
 		assertThat(current.crossConnectName()).isEqualTo("XC-1");
@@ -39,10 +38,10 @@ class CrossConnectServiceTests extends ChangeTestSupport {
 		Long ullId = seedLatency(unique("ULL"), "ULL");
 		Long speed10gId = seedSpeed(unique("10G"), "10G");
 
-		ChangeDto added = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
+		ChangeDto added = applyAdd("CROSS_CONNECT", xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
 		applyUpdateCurrent(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				added.assetIdentityId(),
 				json(fields(
 						"crossConnectName", "XC-1-REN",
@@ -71,9 +70,9 @@ class CrossConnectServiceTests extends ChangeTestSupport {
 	void terminatesCrossConnectThroughChangeWorkflow() {
 		XcDeps deps = seedXcDeps();
 		Long providerFirmId = seedFirm(unique("Provider"));
-		ChangeDto added = applyAdd(AssetType.CROSS_CONNECT, xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
+		ChangeDto added = applyAdd("CROSS_CONNECT", xcWithProvider("XC-1", "CKT-XC-1", deps, providerFirmId));
 
-		applyTerminateCurrent(AssetType.CROSS_CONNECT, added.assetIdentityId());
+		applyTerminateCurrent("CROSS_CONNECT", added.assetIdentityId());
 
 		CrossConnectDto current = crossConnects.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");

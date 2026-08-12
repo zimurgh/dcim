@@ -3,7 +3,6 @@ package com.dcim.workflow.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dcim.asset.ValidationCodes;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeSpecDto;
 
@@ -14,7 +13,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void circuitIdUniqueAllowsAdd() {
 		XcDeps deps = seedXcDeps();
-		ChangeDto staged = stageAdd(AssetType.CROSS_CONNECT, xcPayload(unique("CKT"), deps));
+		ChangeDto staged = stageAdd("CROSS_CONNECT", xcPayload(unique("CKT"), deps));
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -25,7 +24,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		String circuitId = unique("CKT");
 		seedCrossConnect(circuitId, deps);
 
-		ChangeDto staged = stageAdd(AssetType.CROSS_CONNECT, xcPayload(circuitId, deps));
+		ChangeDto staged = stageAdd("CROSS_CONNECT", xcPayload(circuitId, deps));
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
@@ -37,7 +36,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long feedTypeId = seedMarketDataFeedType(unique("FeedType"));
 
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				"{\"marketDataFeedName\":\"" + unique("FEED") + "\",\"crossConnectId\":" + crossConnectId
 						+ ",\"marketDataFeedTypeId\":" + feedTypeId
 						+ ",\"ownerFirmId\":" + deps.ownerFirmId()
@@ -55,7 +54,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		seedMarketDataFeed(feedName, crossConnectId, feedTypeId, deps);
 
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				"{\"marketDataFeedName\":\"" + feedName + "\",\"crossConnectId\":" + crossConnectId
 						+ ",\"marketDataFeedTypeId\":" + feedTypeId
 						+ ",\"ownerFirmId\":" + deps.ownerFirmId()
@@ -74,7 +73,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		seedMarketDataFeed(feedName, xc1, feedTypeId, deps);
 
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				"{\"marketDataFeedName\":\"" + feedName + "\",\"crossConnectId\":" + xc2
 						+ ",\"marketDataFeedTypeId\":" + feedTypeId
 						+ ",\"ownerFirmId\":" + deps.ownerFirmId()
@@ -89,7 +88,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 
 		ChangeDto staged = stageAdd(
-				AssetType.DOCUMENT, "{\"documentName\":\"" + unique("LOA") + "\",\"crossConnectId\":" + crossConnectId + "}");
+				"DOCUMENT", "{\"documentName\":\"" + unique("LOA") + "\",\"crossConnectId\":" + crossConnectId + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -102,7 +101,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		seedDocument(documentName, crossConnectId);
 
 		ChangeDto staged = stageAdd(
-				AssetType.DOCUMENT, "{\"documentName\":\"" + documentName + "\",\"crossConnectId\":" + crossConnectId + "}");
+				"DOCUMENT", "{\"documentName\":\"" + documentName + "\",\"crossConnectId\":" + crossConnectId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -116,7 +115,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		seedDocument(documentName, xc1);
 
 		ChangeDto staged = stageAdd(
-				AssetType.DOCUMENT, "{\"documentName\":\"" + documentName + "\",\"crossConnectId\":" + xc2 + "}");
+				"DOCUMENT", "{\"documentName\":\"" + documentName + "\",\"crossConnectId\":" + xc2 + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -125,7 +124,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void cableWithDistinctPortsAllowsAdd() {
 		Long[] ports = seedPortPair();
 		ChangeDto staged = stageAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + ports[1] + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -135,7 +134,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void cableWithSamePortTwiceBlocksAddAndApply() {
 		Long[] ports = seedPortPair();
 		ChangeDto staged = stageAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + ports[0] + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
@@ -145,7 +144,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void cablePortOccupancyAllowsAddWhenPortsFree() {
 		Long[] ports = seedPortPair();
 		ChangeDto staged = stageAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + ports[1] + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -160,7 +159,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long spareId = seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 
 		ChangeDto staged = stageAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + spareId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
@@ -169,7 +168,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void latencyTypeUniqueAllowsAddForUnusedType() {
 		seedLatency(unique("Latency"), "LL");
-		ChangeDto staged = stageAdd(AssetType.LATENCY, "{\"latencyName\":\"" + unique("Latency") + "\",\"latencyType\":\"ULL\"}");
+		ChangeDto staged = stageAdd("LATENCY", "{\"latencyName\":\"" + unique("Latency") + "\",\"latencyType\":\"ULL\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -177,7 +176,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void latencyTypeClashBlocksSecondLatencyOfSameType() {
 		seedLatency(unique("Latency"), "LL");
-		ChangeDto staged = stageAdd(AssetType.LATENCY, "{\"latencyName\":\"" + unique("Latency") + "\",\"latencyType\":\"LL\"}");
+		ChangeDto staged = stageAdd("LATENCY", "{\"latencyName\":\"" + unique("Latency") + "\",\"latencyType\":\"LL\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
@@ -186,7 +185,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void latencyNameUniqueAllowsAdd() {
 		seedLatency(unique("Latency"), "LL");
 		ChangeDto staged = stageAdd(
-				AssetType.LATENCY,
+				"LATENCY",
 				"{\"latencyName\":\"" + unique("OtherLatency") + "\",\"latencyType\":\"ULL\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -196,7 +195,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void latencyNameClashBlocksAddAndApply() {
 		String name = unique("Latency");
 		seedLatency(name, "LL");
-		ChangeDto staged = stageAdd(AssetType.LATENCY, "{\"latencyName\":\"" + name + "\",\"latencyType\":\"ULL\"}");
+		ChangeDto staged = stageAdd("LATENCY", "{\"latencyName\":\"" + name + "\",\"latencyType\":\"ULL\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -204,7 +203,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void speedTypeUniqueAllowsAddForUnusedType() {
 		seedSpeed(unique("Speed"), "1G");
-		ChangeDto staged = stageAdd(AssetType.SPEED, "{\"speedName\":\"" + unique("Speed") + "\",\"speedType\":\"10G\"}");
+		ChangeDto staged = stageAdd("SPEED", "{\"speedName\":\"" + unique("Speed") + "\",\"speedType\":\"10G\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -212,7 +211,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void speedTypeClashBlocksSecondSpeedOfSameType() {
 		seedSpeed(unique("Speed"), "1G");
-		ChangeDto staged = stageAdd(AssetType.SPEED, "{\"speedName\":\"" + unique("Speed") + "\",\"speedType\":\"1G\"}");
+		ChangeDto staged = stageAdd("SPEED", "{\"speedName\":\"" + unique("Speed") + "\",\"speedType\":\"1G\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.VALUE_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.VALUE_CLASH);
 	}
@@ -221,7 +220,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void speedNameUniqueAllowsAdd() {
 		seedSpeed(unique("Speed"), "1G");
 		ChangeDto staged = stageAdd(
-				AssetType.SPEED,
+				"SPEED",
 				"{\"speedName\":\"" + unique("OtherSpeed") + "\",\"speedType\":\"10G\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -231,14 +230,14 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void speedNameClashBlocksAddAndApply() {
 		String name = unique("Speed");
 		seedSpeed(name, "1G");
-		ChangeDto staged = stageAdd(AssetType.SPEED, "{\"speedName\":\"" + name + "\",\"speedType\":\"10G\"}");
+		ChangeDto staged = stageAdd("SPEED", "{\"speedName\":\"" + name + "\",\"speedType\":\"10G\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
 
 	@Test
 	void chargeTypeNameAddSucceedsWhenUnique() {
-		ChangeDto staged = stageAdd(AssetType.CHARGE_TYPE, "{\"chargeTypeName\":\"" + unique("MRC") + "\"}");
+		ChangeDto staged = stageAdd("CHARGE_TYPE", "{\"chargeTypeName\":\"" + unique("MRC") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -248,7 +247,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		String name = unique("MRC");
 		seedChargeType(name);
 
-		ChangeDto staged = stageAdd(AssetType.CHARGE_TYPE, "{\"chargeTypeName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("CHARGE_TYPE", "{\"chargeTypeName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -256,7 +255,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void crossConnectTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.CROSS_CONNECT_TYPE, "{\"crossConnectTypeName\":\"" + unique("XcType") + "\"}");
+				"CROSS_CONNECT_TYPE", "{\"crossConnectTypeName\":\"" + unique("XcType") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -266,7 +265,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		String name = unique("XcType");
 		seedCrossConnectType(name);
 
-		ChangeDto staged = stageAdd(AssetType.CROSS_CONNECT_TYPE, "{\"crossConnectTypeName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("CROSS_CONNECT_TYPE", "{\"crossConnectTypeName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -274,7 +273,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	@Test
 	void marketDataFeedTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_DATA_FEED_TYPE, "{\"marketDataFeedTypeName\":\"" + unique("FeedType") + "\"}");
+				"MARKET_DATA_FEED_TYPE", "{\"marketDataFeedTypeName\":\"" + unique("FeedType") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -284,7 +283,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		String name = unique("FeedType");
 		seedMarketDataFeedType(name);
 
-		ChangeDto staged = stageAdd(AssetType.MARKET_DATA_FEED_TYPE, "{\"marketDataFeedTypeName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("MARKET_DATA_FEED_TYPE", "{\"marketDataFeedTypeName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -294,7 +293,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT, crossConnectId);
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT", crossConnectId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -306,7 +305,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long feedTypeId = seedMarketDataFeedType(unique("FeedType"));
 		seedMarketDataFeed(unique("FEED"), crossConnectId, feedTypeId, deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT, crossConnectId);
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT", crossConnectId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -317,7 +316,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 		seedDocument(unique("LOA"), crossConnectId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT, crossConnectId);
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT", crossConnectId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -328,11 +327,11 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 		Long[] ports = seedPortPair();
 		applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + ports[1]
 						+ ",\"crossConnectId\":" + crossConnectId + "}");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT, crossConnectId);
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT", crossConnectId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -346,15 +345,15 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long documentId = seedDocument(unique("LOA"), crossConnectId);
 		Long[] ports = seedPortPair();
 		Long cableId = applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				"{\"cableName\":\"" + unique("CBL") + "\",\"portAId\":" + ports[0] + ",\"portBId\":" + ports[1]
 						+ ",\"crossConnectId\":" + crossConnectId + "}")
 				.assetIdentityId();
 
-		ChangeDto terminateFeed = stageTerminateCurrent(AssetType.MARKET_DATA_FEED, feedId);
-		ChangeDto terminateDocument = stageTerminateCurrent(AssetType.DOCUMENT, documentId);
-		ChangeDto terminateCable = stageTerminateCurrent(AssetType.CABLE, cableId);
-		ChangeDto terminateCrossConnect = stageTerminateCurrent(AssetType.CROSS_CONNECT, crossConnectId);
+		ChangeDto terminateFeed = stageTerminateCurrent("MARKET_DATA_FEED", feedId);
+		ChangeDto terminateDocument = stageTerminateCurrent("DOCUMENT", documentId);
+		ChangeDto terminateCable = stageTerminateCurrent("CABLE", cableId);
+		ChangeDto terminateCrossConnect = stageTerminateCurrent("CROSS_CONNECT", crossConnectId);
 
 		ChangeSpecDto spec = createSpec(deps.ownerFirmId());
 		addToSpec(spec.changeSpecId(), terminateFeed.changeId());
@@ -377,7 +376,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		seedCrossConnect(unique("CKT"), deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.LATENCY, deps.latencyId());
+		ChangeDto staged = stageTerminateCurrent("LATENCY", deps.latencyId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -386,7 +385,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateLatencySucceedsWhenUnreferenced() {
 		Long latencyId = seedLatency(unique("Latency"), "LL");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.LATENCY, latencyId);
+		ChangeDto staged = stageTerminateCurrent("LATENCY", latencyId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -396,7 +395,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		seedCrossConnect(unique("CKT"), deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.SPEED, deps.speedId());
+		ChangeDto staged = stageTerminateCurrent("SPEED", deps.speedId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -405,7 +404,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateSpeedSucceedsWhenUnreferenced() {
 		Long speedId = seedSpeed(unique("Speed"), "1G");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.SPEED, speedId);
+		ChangeDto staged = stageTerminateCurrent("SPEED", speedId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -415,7 +414,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		seedCrossConnect(unique("CKT"), deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT_TYPE, deps.crossConnectTypeId());
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT_TYPE", deps.crossConnectTypeId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -424,7 +423,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateCrossConnectTypeSucceedsWhenUnreferenced() {
 		Long typeId = seedCrossConnectType(unique("XcType"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CROSS_CONNECT_TYPE, typeId);
+		ChangeDto staged = stageTerminateCurrent("CROSS_CONNECT_TYPE", typeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -436,7 +435,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 		Long feedTypeId = seedMarketDataFeedType(unique("FeedType"));
 		seedMarketDataFeed(unique("FEED"), crossConnectId, feedTypeId, deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.MARKET_DATA_FEED_TYPE, feedTypeId);
+		ChangeDto staged = stageTerminateCurrent("MARKET_DATA_FEED_TYPE", feedTypeId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -445,7 +444,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateMarketDataFeedTypeSucceedsWhenUnreferenced() {
 		Long feedTypeId = seedMarketDataFeedType(unique("FeedType"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.MARKET_DATA_FEED_TYPE, feedTypeId);
+		ChangeDto staged = stageTerminateCurrent("MARKET_DATA_FEED_TYPE", feedTypeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -454,10 +453,10 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateChargeTypeBlockedByActiveCrossConnectType() {
 		Long chargeTypeId = seedChargeType(unique("MRC"));
 		applyAdd(
-				AssetType.CROSS_CONNECT_TYPE,
+				"CROSS_CONNECT_TYPE",
 				"{\"crossConnectTypeName\":\"" + unique("XcType") + "\",\"chargeTypeId\":" + chargeTypeId + "}");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CHARGE_TYPE, chargeTypeId);
+		ChangeDto staged = stageTerminateCurrent("CHARGE_TYPE", chargeTypeId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -466,10 +465,10 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateChargeTypeBlockedByActiveMarketDataFeedType() {
 		Long chargeTypeId = seedChargeType(unique("MRC"));
 		applyAdd(
-				AssetType.MARKET_DATA_FEED_TYPE,
+				"MARKET_DATA_FEED_TYPE",
 				"{\"marketDataFeedTypeName\":\"" + unique("FeedType") + "\",\"chargeTypeId\":" + chargeTypeId + "}");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CHARGE_TYPE, chargeTypeId);
+		ChangeDto staged = stageTerminateCurrent("CHARGE_TYPE", chargeTypeId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -478,7 +477,7 @@ class ConnectivityValidationTests extends ValidationTestSupport {
 	void terminateChargeTypeSucceedsWhenUnreferenced() {
 		Long chargeTypeId = seedChargeType(unique("MRC"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CHARGE_TYPE, chargeTypeId);
+		ChangeDto staged = stageTerminateCurrent("CHARGE_TYPE", chargeTypeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}

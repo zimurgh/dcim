@@ -8,7 +8,6 @@ import java.util.Map;
 
 import com.dcim.site.datacenter.DataCenterIdentity;
 import com.dcim.site.datacenter.DataCenterIdentityRepository;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -59,7 +58,7 @@ class CageServiceTests extends ChangeTestSupport {
 		Long dataCenterId = seedDataCenter("NY4");
 
 		Long cageId = applyAdd(
-				AssetType.CAGE,
+				"CAGE",
 				json(Map.of("cageName", "Cage-A", "dataCenterId", dataCenterId)))
 				.assetIdentityId();
 
@@ -80,7 +79,7 @@ class CageServiceTests extends ChangeTestSupport {
 		Long cageId = seedCage("Cage-A", dataCenterId);
 
 		applyUpdateCurrent(
-				AssetType.CAGE,
+				"CAGE",
 				cageId,
 				json(Map.of("cageName", "Cage-B", "dataCenterId", dataCenterId)));
 
@@ -103,7 +102,7 @@ class CageServiceTests extends ChangeTestSupport {
 		Long dataCenterId = seedDataCenter("NY4");
 		Long cageId = seedCage("Cage-A", dataCenterId);
 
-		applyTerminateCurrent(AssetType.CAGE, cageId);
+		applyTerminateCurrent("CAGE", cageId);
 
 		CageDto current = cages.findCurrent(cageId).orElseThrow();
 		assertThat(current.cageName()).isEqualTo("Cage-A");

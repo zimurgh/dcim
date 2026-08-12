@@ -25,9 +25,11 @@ public class ChangeView {
 	@Column(name = "BODY", nullable = false, columnDefinition = "CLOB")
 	private String body;
 
-	@Enumerated(EnumType.STRING)
+	@Column(name = "ASSET_TYPE_ID")
+	private Long assetTypeId;
+
 	@Column(name = "ASSET_TYPE", length = 50)
-	private AssetType assetType;
+	private String assetType;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "ACTION", length = 50)
@@ -76,7 +78,11 @@ public class ChangeView {
 		return body;
 	}
 
-	public AssetType getAssetType() {
+	public Long getAssetTypeId() {
+		return assetTypeId;
+	}
+
+	public String getAssetType() {
 		return assetType;
 	}
 

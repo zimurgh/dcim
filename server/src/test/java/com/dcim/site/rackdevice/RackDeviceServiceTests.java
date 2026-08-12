@@ -10,7 +10,6 @@ import com.dcim.site.rack.RackIdentity;
 import com.dcim.site.rack.RackIdentityRepository;
 import com.dcim.site.rackdevicetype.RackDeviceTypeIdentity;
 import com.dcim.site.rackdevicetype.RackDeviceTypeIdentityRepository;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -68,7 +67,7 @@ class RackDeviceServiceTests extends ChangeTestSupport {
 		Long deviceTypeId = seedRackDeviceType("Extranet Switch", "EXTRANET_SWITCH");
 
 		Long deviceId = applyAdd(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				json(Map.of(
 						"rackDeviceName", "sw-01",
 						"rackId", rackId,
@@ -94,7 +93,7 @@ class RackDeviceServiceTests extends ChangeTestSupport {
 		Long deviceId = seedRackDevice("sw-01", rackId, deviceTypeId);
 
 		applyUpdateCurrent(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				deviceId,
 				json(Map.of(
 						"rackDeviceName", "sw-02",
@@ -122,7 +121,7 @@ class RackDeviceServiceTests extends ChangeTestSupport {
 		Long deviceTypeId = seedRackDeviceType("Extranet Switch", "EXTRANET_SWITCH");
 		Long deviceId = seedRackDevice("sw-01", rackId, deviceTypeId);
 
-		applyTerminateCurrent(AssetType.RACK_DEVICE, deviceId);
+		applyTerminateCurrent("RACK_DEVICE", deviceId);
 
 		RackDeviceDto current = rackDevices.findCurrent(deviceId).orElseThrow();
 		assertThat(current.rackDeviceName()).isEqualTo("sw-01");

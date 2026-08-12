@@ -8,7 +8,8 @@ public record ChangeDto(
 		ChangeStage stage,
 		String statusLabel,
 		String body,
-		AssetType assetType,
+		String assetType,
+		Long assetTypeId,
 		ChangeAction action,
 		Long assetIdentityId,
 		Long baseHistoryId,
@@ -20,7 +21,7 @@ public record ChangeDto(
 		Long changeSpecId,
 		List<HistoryLinkDto> historyLinks) {
 
-	public record HistoryLinkDto(AssetType assetType, Long historyId, HistoryLinkRole role) {
+	public record HistoryLinkDto(String assetType, Long assetTypeId, Long historyId, HistoryLinkRole role) {
 	}
 
 	static ChangeDto untracked(ChangeUntracked row, String statusLabel) {
@@ -29,6 +30,7 @@ public record ChangeDto(
 				ChangeStage.UNTRACKED,
 				statusLabel,
 				row.getPayload().getBody(),
+				null,
 				null,
 				null,
 				null,
@@ -42,13 +44,14 @@ public record ChangeDto(
 				List.of());
 	}
 
-	static ChangeDto staged(ChangeStaged row, String statusLabel) {
+	static ChangeDto staged(ChangeStaged row, String assetTypeCode, String statusLabel) {
 		return new ChangeDto(
 				row.getChangeId(),
 				ChangeStage.STAGED,
 				statusLabel,
 				row.getPayload().getBody(),
-				row.getAssetType(),
+				assetTypeCode,
+				row.getAssetType().getAssetTypeId(),
 				row.getAction(),
 				row.getAssetIdentityId(),
 				row.getBaseHistoryId(),
@@ -63,6 +66,7 @@ public record ChangeDto(
 
 	static ChangeDto committed(
 			ChangeCommitted row,
+			String assetTypeCode,
 			String statusLabel,
 			Long assetIdentityId,
 			List<HistoryLinkDto> links) {
@@ -71,7 +75,8 @@ public record ChangeDto(
 				ChangeStage.COMMITTED,
 				statusLabel,
 				row.getPayload().getBody(),
-				row.getAssetType(),
+				assetTypeCode,
+				row.getAssetType().getAssetTypeId(),
 				row.getAction(),
 				assetIdentityId,
 				null,
@@ -91,6 +96,7 @@ public record ChangeDto(
 				view.getStatusLabel(),
 				view.getBody(),
 				view.getAssetType(),
+				view.getAssetTypeId(),
 				view.getAction(),
 				view.getAssetIdentityId(),
 				view.getBaseHistoryId(),

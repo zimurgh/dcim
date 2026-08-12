@@ -2,37 +2,49 @@ package com.dcim.workflow;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public final class AssetApplyOrder {
+
+	private static final Map<String, Integer> DEFAULT_RANKS = Map.ofEntries(
+			Map.entry("RACK_DEVICE_PORT", 10),
+			Map.entry("CABLE", 15),
+			Map.entry("DOCUMENT", 20),
+			Map.entry("MARKET_DATA_FEED", 20),
+			Map.entry("RACK_DEVICE", 30),
+			Map.entry("RACK", 40),
+			Map.entry("CAGE", 50),
+			Map.entry("CROSS_CONNECT", 60),
+			Map.entry("DATA_CENTER", 70),
+			Map.entry("RACK_DEVICE_PORT_TYPE", 80),
+			Map.entry("RACK_DEVICE_TYPE", 80),
+			Map.entry("ASSET_TYPE", 85),
+			Map.entry("MARKET_DATA_FEED_TYPE", 90),
+			Map.entry("CROSS_CONNECT_TYPE", 90),
+			Map.entry("LATENCY", 90),
+			Map.entry("SPEED", 90),
+			Map.entry("CHARGE_TYPE", 90),
+			Map.entry("MARKET_SEGMENT", 100),
+			Map.entry("EXCHANGE", 100),
+			Map.entry("FIRM", 110),
+			Map.entry("USER", 120));
 
 	private AssetApplyOrder() {
 	}
 
-	public static int rank(AssetType type) {
-		return switch (type) {
-			case RACK_DEVICE_PORT -> 10;
-			case CABLE -> 15;
-			case DOCUMENT, MARKET_DATA_FEED -> 20;
-			case RACK_DEVICE -> 30;
-			case RACK -> 40;
-			case CAGE -> 50;
-			case CROSS_CONNECT -> 60;
-			case DATA_CENTER -> 70;
-			case RACK_DEVICE_PORT_TYPE, RACK_DEVICE_TYPE -> 80;
-			case MARKET_DATA_FEED_TYPE, CROSS_CONNECT_TYPE, LATENCY, SPEED, CHARGE_TYPE -> 90;
-			case MARKET_SEGMENT, EXCHANGE -> 100;
-			case FIRM -> 110;
-			case USER -> 120;
-		};
+	public static int rank(String assetTypeCode) {
+		Integer rank = DEFAULT_RANKS.get(assetTypeCode);
+		if (rank == null) {
+			throw new IllegalArgumentException("Unknown asset type code: " + assetTypeCode);
+		}
+		return rank;
 	}
 
-	public static Comparator<ChangeStaged> comparator() {
-		return Comparator
-				.comparingInt((ChangeStaged staged) -> rank(staged.getAssetType()))
-				.thenComparing(ChangeStaged::getChangeId);
+	public static List<String> knownCodes() {
+		return DEFAULT_RANKS.keySet().stream().sorted().toList();
 	}
 
-	public static List<ChangeStaged> sort(List<ChangeStaged> staged) {
-		return staged.stream().sorted(comparator()).toList();
+	public static Comparator<String> codeComparator() {
+		return Comparator.comparingInt(AssetApplyOrder::rank).thenComparing(code -> code);
 	}
 }

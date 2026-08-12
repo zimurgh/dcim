@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ class FirmApiTests extends ChangeTestSupport {
 	@Test
 	void historyIncludesPriorClosedRows() throws Exception {
 		Long firmId = seedFirm(unique("Acme"));
-		applyUpdateCurrent(AssetType.FIRM, firmId, json(Map.of("firmName", unique("Acme2"))));
+		applyUpdateCurrent("FIRM", firmId, json(Map.of("firmName", unique("Acme2"))));
 
 		String body = mvc.perform(get("/api/firms/{id}/history", firmId))
 				.andExpect(status().isOk())

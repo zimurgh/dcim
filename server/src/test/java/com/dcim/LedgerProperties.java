@@ -11,12 +11,13 @@ import java.util.List;
 
 import com.dcim.asset.AuditHistory;
 import com.dcim.workflow.AssetApplyOrder;
-import com.dcim.workflow.AssetType;
 
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
 import net.jqwik.api.constraints.IntRange;
-import net.jqwik.api.constraints.Size;
 
 /**
  * Property tests for ledger invariants called out in DESIGN.md (linear history, apply order).
@@ -39,24 +40,31 @@ class LedgerProperties {
 	}
 
 	@Property
-	void applyOrderRankIsTotalAndDependentsPrecedeParents(
-			@ForAll @Size(min = 2, max = 8) List<AssetType> types) {
-		List<AssetType> sorted = new ArrayList<>(types);
-		sorted.sort(Comparator.comparingInt(AssetApplyOrder::rank).thenComparing(Enum::name));
+	void applyOrderRankIsTotalAndDependentsPrecedeParents(@ForAll("assetTypeCodeLists") List<String> types) {
+		List<String> sorted = new ArrayList<>(types);
+		sorted.sort(Comparator.comparingInt(AssetApplyOrder::rank).thenComparing(code -> code));
 
 		for (int i = 1; i < sorted.size(); i++) {
 			assertThat(AssetApplyOrder.rank(sorted.get(i - 1)))
 					.isLessThanOrEqualTo(AssetApplyOrder.rank(sorted.get(i)));
 		}
 
-		if (types.contains(AssetType.CAGE) && types.contains(AssetType.DATA_CENTER)) {
-			assertThat(AssetApplyOrder.rank(AssetType.CAGE))
-					.isLessThan(AssetApplyOrder.rank(AssetType.DATA_CENTER));
+		if (types.contains("CAGE") && types.contains("DATA_CENTER")) {
+			assertThat(AssetApplyOrder.rank("CAGE"))
+					.isLessThan(AssetApplyOrder.rank("DATA_CENTER"));
 		}
-		if (types.contains(AssetType.CABLE) && types.contains(AssetType.CROSS_CONNECT)) {
-			assertThat(AssetApplyOrder.rank(AssetType.CABLE))
-					.isLessThan(AssetApplyOrder.rank(AssetType.CROSS_CONNECT));
+		if (types.contains("CABLE") && types.contains("CROSS_CONNECT")) {
+			assertThat(AssetApplyOrder.rank("CABLE"))
+					.isLessThan(AssetApplyOrder.rank("CROSS_CONNECT"));
 		}
+	}
+
+	@Provide
+	Arbitrary<List<String>> assetTypeCodeLists() {
+		return Arbitraries.of(AssetApplyOrder.knownCodes().toArray(String[]::new))
+				.list()
+				.ofMinSize(2)
+				.ofMaxSize(8);
 	}
 
 	private static final class SampleHistory extends AuditHistory {

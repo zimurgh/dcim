@@ -3,7 +3,6 @@ package com.dcim.workflow.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dcim.asset.ValidationCodes;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 
 import org.junit.jupiter.api.Test;
@@ -12,7 +11,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 
 	@Test
 	void firmNameAddSucceedsWhenUnique() {
-		ChangeDto staged = stageAdd(AssetType.FIRM, "{\"firmName\":\"" + unique("Acme") + "\"}");
+		ChangeDto staged = stageAdd("FIRM", "{\"firmName\":\"" + unique("Acme") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -22,7 +21,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		String name = unique("Acme");
 		seedFirm(name);
 
-		ChangeDto staged = stageAdd(AssetType.FIRM, "{\"firmName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("FIRM", "{\"firmName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -30,7 +29,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	@Test
 	void exchangeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				"{\"exchangeName\":\"" + unique("CBOE") + "\",\"exchangeCode\":\"CBOE\""
 						+ ",\"exchangeAbbreviation\":\"CBOE\",\"exchangeType\":\"OPTIONS\"}");
 		assertValid(staged.changeId());
@@ -43,7 +42,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		seedExchange(name, "OPTIONS");
 
 		ChangeDto staged = stageAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				"{\"exchangeName\":\"" + name + "\",\"exchangeCode\":\"X\""
 						+ ",\"exchangeAbbreviation\":\"X\",\"exchangeType\":\"EQUITIES\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
@@ -54,7 +53,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	void terminateExchangeSucceedsWhenUnreferenced() {
 		Long exchangeId = seedExchange(unique("NYSE"), "EQUITIES");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.EXCHANGE, exchangeId);
+		ChangeDto staged = stageTerminateCurrent("EXCHANGE", exchangeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -62,7 +61,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	@Test
 	void marketSegmentNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				"{\"marketSegmentName\":\"" + unique("Equities") + "\",\"marketSegmentType\":\"EQUITIES_INDEX\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -74,7 +73,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		seedMarketSegment(name, "EQUITIES_INDEX");
 
 		ChangeDto staged = stageAdd(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				"{\"marketSegmentName\":\"" + name + "\",\"marketSegmentType\":\"AGRICULTURAL_FUTURES\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
@@ -82,7 +81,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 
 	@Test
 	void userNameAddSucceedsWhenUnique() {
-		ChangeDto staged = stageAdd(AssetType.USER, "{\"userName\":\"" + unique("alice") + "\"}");
+		ChangeDto staged = stageAdd("USER", "{\"userName\":\"" + unique("alice") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -92,7 +91,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		String name = unique("alice");
 		seedUser(name);
 
-		ChangeDto staged = stageAdd(AssetType.USER, "{\"userName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("USER", "{\"userName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -101,7 +100,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	void terminateFirmSucceedsWhenUnreferenced() {
 		Long firmId = seedFirm(unique("Acme"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.FIRM, firmId);
+		ChangeDto staged = stageTerminateCurrent("FIRM", firmId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -111,7 +110,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		seedCrossConnect(unique("CKT"), deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.FIRM, deps.ownerFirmId());
+		ChangeDto staged = stageTerminateCurrent("FIRM", deps.ownerFirmId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -123,7 +122,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		Long feedTypeId = seedMarketDataFeedType(unique("FeedType"));
 		seedMarketDataFeed(unique("FEED"), crossConnectId, feedTypeId, deps);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.FIRM, deps.billingFirmId());
+		ChangeDto staged = stageTerminateCurrent("FIRM", deps.billingFirmId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -132,7 +131,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	void terminateMarketSegmentSucceedsWhenUnreferenced() {
 		Long marketSegmentId = seedMarketSegment(unique("Equities"), "EQUITIES_INDEX");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.MARKET_SEGMENT, marketSegmentId);
+		ChangeDto staged = stageTerminateCurrent("MARKET_SEGMENT", marketSegmentId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -142,7 +141,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		Long marketSegmentId = seedMarketSegment(unique("Equities"), "EQUITIES_INDEX");
 		applyAdd(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				"{\"crossConnectName\":\"XC-Seg\",\"circuitId\":\"" + unique("CKT") + "\""
 						+ ",\"crossConnectTypeId\":" + deps.crossConnectTypeId()
 						+ ",\"latencyId\":" + deps.latencyId()
@@ -151,7 +150,7 @@ class OrganizationValidationTests extends ValidationTestSupport {
 						+ ",\"ownerFirmId\":" + deps.ownerFirmId()
 						+ ",\"billingFirmId\":" + deps.billingFirmId() + "}");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.MARKET_SEGMENT, marketSegmentId);
+		ChangeDto staged = stageTerminateCurrent("MARKET_SEGMENT", marketSegmentId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_REFERENCES);
 	}
@@ -160,11 +159,11 @@ class OrganizationValidationTests extends ValidationTestSupport {
 	void terminateUserAllowedEvenAfterApplyingChanges() {
 		Long historyAuthorUserId = seedUser(unique("author"));
 
-		ChangeDto dataCenterAdd = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto dataCenterAdd = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeDto applied = changes.applyStaged(dataCenterAdd.changeId(), historyAuthorUserId);
 		assertThat(applied.appliedBy()).isEqualTo(historyAuthorUserId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.USER, historyAuthorUserId);
+		ChangeDto staged = stageTerminateCurrent("USER", historyAuthorUserId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}

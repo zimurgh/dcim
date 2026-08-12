@@ -2,6 +2,7 @@ package com.dcim.workflow;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import com.dcim.organization.firm.FirmDto;
 import com.dcim.organization.firm.FirmIdentity;
 import com.dcim.organization.firm.FirmIdentityRepository;
 import com.dcim.organization.firm.FirmService;
+import com.dcim.workflow.assettype.AssetTypeService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class ChangeSpecService {
 	private final FirmIdentityRepository firms;
 	private final FirmService firmService;
 	private final ChangeService changes;
+	private final AssetTypeService assetTypes;
 	private final Clock clock;
 
 	ChangeSpecService(
@@ -35,6 +38,7 @@ public class ChangeSpecService {
 			FirmIdentityRepository firms,
 			FirmService firmService,
 			ChangeService changes,
+			AssetTypeService assetTypes,
 			Optional<Clock> clock) {
 		this.specs = specs;
 		this.specViews = specViews;
@@ -44,6 +48,7 @@ public class ChangeSpecService {
 		this.firms = firms;
 		this.firmService = firmService;
 		this.changes = changes;
+		this.assetTypes = assetTypes;
 		this.clock = clock.orElse(Clock.systemUTC());
 	}
 
@@ -145,7 +150,11 @@ public class ChangeSpecService {
 		List<Long> changeIds = items.findByChangeSpec_ChangeSpecId(changeSpecId).stream()
 				.map(item -> item.getChangeIdentity().getChangeId())
 				.toList();
-		List<ChangeStaged> membership = AssetApplyOrder.sort(changes.loadStaged(changeIds));
+		List<ChangeStaged> membership = changes.loadStaged(changeIds).stream()
+				.sorted(Comparator
+						.comparingInt((ChangeStaged staged) -> assetTypes.applyRank(staged.getAssetType()))
+						.thenComparing(ChangeStaged::getChangeId))
+				.toList();
 		List<com.dcim.asset.ValidationIssue> issues = changes.validateAll(membership);
 		if (!issues.isEmpty()) {
 			throw new ValidationFailedException(issues);

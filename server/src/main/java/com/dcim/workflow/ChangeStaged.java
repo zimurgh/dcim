@@ -2,6 +2,8 @@ package com.dcim.workflow;
 
 import java.time.Instant;
 
+import com.dcim.workflow.assettype.AssetTypeIdentity;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -20,9 +22,9 @@ public class ChangeStaged {
 	@JoinColumn(name = "CHANGE_PAYLOAD_ID", nullable = false)
 	private ChangePayload payload;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "ASSET_TYPE", nullable = false, length = 50)
-	private AssetType assetType;
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	@JoinColumn(name = "ASSET_TYPE_ID", nullable = false)
+	private AssetTypeIdentity assetType;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "ACTION", nullable = false, length = 50)
@@ -46,7 +48,7 @@ public class ChangeStaged {
 	public ChangeStaged(
 			ChangeIdentity changeIdentity,
 			ChangePayload payload,
-			AssetType assetType,
+			AssetTypeIdentity assetType,
 			ChangeAction action,
 			Long assetIdentityId,
 			Long baseHistoryId,
@@ -79,7 +81,7 @@ public class ChangeStaged {
 		this.payload = payload;
 	}
 
-	public AssetType getAssetType() {
+	public AssetTypeIdentity getAssetType() {
 		return assetType;
 	}
 

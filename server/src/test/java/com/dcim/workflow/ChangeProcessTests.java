@@ -29,11 +29,11 @@ class ChangeProcessTests extends ValidationTestSupport {
 		assertThat(untracked.existsById(draft.changeId())).isFalse();
 		assertThat(changes.find(draft.changeId())).isEmpty();
 
-		ChangeDto stagedChange = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto stagedChange = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		changes.cancelOpen(stagedChange.changeId());
 		assertThat(staged.existsById(stagedChange.changeId())).isFalse();
 
-		ChangeDto applied = applyAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto applied = applyAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		assertThatThrownBy(() -> changes.cancelOpen(applied.changeId()))
 				.isInstanceOf(WorkflowException.class)
 				.hasMessageContaining("Committed");
@@ -43,7 +43,7 @@ class ChangeProcessTests extends ValidationTestSupport {
 	@Test
 	void cancelOpenBlockedWhileChangeIsOnChangeSpec() {
 		Long ownerFirmId = seedFirm(unique("Owner"));
-		ChangeDto stagedChange = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto stagedChange = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), stagedChange.changeId());
 
@@ -56,7 +56,7 @@ class ChangeProcessTests extends ValidationTestSupport {
 	@Test
 	void removeChangeFromDraftSpecThenCancelOpenSucceeds() {
 		Long ownerFirmId = seedFirm(unique("Owner"));
-		ChangeDto stagedChange = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto stagedChange = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), stagedChange.changeId());
 
@@ -76,7 +76,7 @@ class ChangeProcessTests extends ValidationTestSupport {
 
 		assertThatThrownBy(() -> changeSpecs.addChange(
 						cancelled.changeSpecId(),
-						stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}").changeId()))
+						stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}").changeId()))
 				.isInstanceOf(WorkflowException.class)
 				.hasMessageContaining("not mutable");
 		assertThatThrownBy(() -> changeSpecs.cancel(cancelled.changeSpecId()))
@@ -87,7 +87,7 @@ class ChangeProcessTests extends ValidationTestSupport {
 	@Test
 	void appliedSpecIsImmutable() {
 		Long ownerFirmId = seedFirm(unique("Owner"));
-		ChangeDto stagedChange = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto stagedChange = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), stagedChange.changeId());
 		submitPendingBillingWithChrec(spec.changeSpecId());
@@ -145,16 +145,16 @@ class ChangeProcessTests extends ValidationTestSupport {
 		Long cageId = seedCage(unique("Cage"), dataCenterId);
 		Long ownerFirmId = seedFirm(unique("Owner"));
 
-		ChangeDto terminateCage = stageTerminateCurrent(AssetType.CAGE, cageId);
-		ChangeDto terminateDataCenter = stageTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		ChangeDto terminateCage = stageTerminateCurrent("CAGE", cageId);
+		ChangeDto terminateDataCenter = stageTerminateCurrent("DATA_CENTER", dataCenterId);
 
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), terminateDataCenter.changeId());
 		addToSpec(spec.changeSpecId(), terminateCage.changeId());
 		submitPendingBillingWithChrec(spec.changeSpecId());
 
-		assertThat(AssetApplyOrder.rank(AssetType.CAGE))
-				.isLessThan(AssetApplyOrder.rank(AssetType.DATA_CENTER));
+		assertThat(AssetApplyOrder.rank("CAGE"))
+				.isLessThan(AssetApplyOrder.rank("DATA_CENTER"));
 		assertSpecApplySucceeds(spec.changeSpecId());
 
 		assertThat(cages.findCurrent(cageId).orElseThrow().status()).isEqualTo("Terminated");

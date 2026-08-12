@@ -29,7 +29,7 @@ class CrossConnectViewTests extends ChangeTestSupport {
 		Long speedId = seedSpeed(speedName, "1G");
 
 		Long crossConnectId = applyAdd(
-				com.dcim.workflow.AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				json(fields(
 						"crossConnectName", "XC-Flat",
 						"circuitId", unique("CKT"),

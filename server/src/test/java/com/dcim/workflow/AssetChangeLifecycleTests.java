@@ -141,7 +141,7 @@ class AssetChangeLifecycleTests {
 	@Test
 	void userAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.USER,
+				"USER",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -150,7 +150,7 @@ class AssetChangeLifecycleTests {
 		assertThat(add.statusLabel()).isEqualTo("Active");
 		assertThat(add.historyLinks()).singleElement().satisfies(link -> {
 			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
-			assertThat(link.assetType()).isEqualTo(AssetType.USER);
+			assertThat(link.assetType()).isEqualTo("USER");
 		});
 
 		com.dcim.organization.user.UserDto current = users.findCurrent(add.assetIdentityId()).orElseThrow();
@@ -162,7 +162,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(add.changeId(), 1);
 
 		ChangeDto update = progress(
-				AssetType.USER,
+				"USER",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.userHistoryId(),
@@ -177,7 +177,7 @@ class AssetChangeLifecycleTests {
 		assertThat(users.history(add.assetIdentityId())).hasSize(2);
 
 		ChangeDto terminate = progress(
-				AssetType.USER,
+				"USER",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.userHistoryId(),
@@ -195,13 +195,13 @@ class AssetChangeLifecycleTests {
 		Long crossConnectId = seedCrossConnectForLifecycle();
 
 		ChangeDto add = progress(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"documentName\":\"LOA-1\",\"crossConnectId\":" + crossConnectId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
-		assertCreatedLink(add, AssetType.DOCUMENT);
+		assertCreatedLink(add, "DOCUMENT");
 
 		com.dcim.connectivity.document.DocumentDto current =
 				documents.findCurrent(add.assetIdentityId()).orElseThrow();
@@ -211,7 +211,7 @@ class AssetChangeLifecycleTests {
 		assertThat(documents.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.documentHistoryId(),
@@ -223,7 +223,7 @@ class AssetChangeLifecycleTests {
 		assertThat(documents.history(add.assetIdentityId())).hasSize(2);
 
 		ChangeDto terminate = progress(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.documentHistoryId(),
@@ -237,7 +237,7 @@ class AssetChangeLifecycleTests {
 	@Test
 	void firmAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.FIRM,
+				"FIRM",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -246,7 +246,7 @@ class AssetChangeLifecycleTests {
 		assertThat(add.statusLabel()).isEqualTo("Active");
 		assertThat(add.historyLinks()).singleElement().satisfies(link -> {
 			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
-			assertThat(link.assetType()).isEqualTo(AssetType.FIRM);
+			assertThat(link.assetType()).isEqualTo("FIRM");
 		});
 
 		FirmDto current = firms.findCurrent(add.assetIdentityId()).orElseThrow();
@@ -259,7 +259,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(add.changeId(), 1);
 
 		ChangeDto update = progress(
-				AssetType.FIRM,
+				"FIRM",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.firmHistoryId(),
@@ -276,7 +276,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.FIRM,
+				"FIRM",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.firmHistoryId(),
@@ -292,7 +292,7 @@ class AssetChangeLifecycleTests {
 	@Test
 	void exchangeAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -300,7 +300,7 @@ class AssetChangeLifecycleTests {
 						+ "\"exchangeAbbreviation\":\"CBOE\",\"exchangeType\":\"OPTIONS\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.EXCHANGE);
+		assertCreatedLink(add, "EXCHANGE");
 
 		ExchangeDto current = exchanges.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.exchangeName()).isEqualTo("Chicago Board Options Exchange");
@@ -313,7 +313,7 @@ class AssetChangeLifecycleTests {
 		assertThat(exchanges.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.exchangeHistoryId(),
@@ -332,7 +332,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.exchangeHistoryId(),
@@ -349,14 +349,14 @@ class AssetChangeLifecycleTests {
 	@Test
 	void marketSegmentAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"marketSegmentName\":\"Equities Index\",\"marketSegmentType\":\"Equities Index\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.MARKET_SEGMENT);
+		assertCreatedLink(add, "MARKET_SEGMENT");
 
 		MarketSegmentDto current = marketSegments.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.marketSegmentName()).isEqualTo("Equities Index");
@@ -367,7 +367,7 @@ class AssetChangeLifecycleTests {
 		assertThat(marketSegments.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.marketSegmentHistoryId(),
@@ -386,7 +386,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.marketSegmentHistoryId(),
@@ -403,7 +403,7 @@ class AssetChangeLifecycleTests {
 	@Test
 	void dataCenterAddThroughStagesWritesHistory() {
 		ChangeDto applied = progress(
-				AssetType.DATA_CENTER,
+				"DATA_CENTER",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -413,20 +413,20 @@ class AssetChangeLifecycleTests {
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(dataCenters.history(applied.assetIdentityId())).hasSize(1);
-		assertCreatedLink(applied, AssetType.DATA_CENTER);
+		assertCreatedLink(applied, "DATA_CENTER");
 	}
 
 	@Test
 	void cageAddThroughStagesWritesHistory() {
 		Long dataCenterId = progress(
-				AssetType.DATA_CENTER,
+				"DATA_CENTER",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"dataCenterName\":\"NY4\"}").assetIdentityId();
 
 		ChangeDto applied = progress(
-				AssetType.CAGE,
+				"CAGE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -436,16 +436,16 @@ class AssetChangeLifecycleTests {
 		assertThat(current.dataCenterId()).isEqualTo(dataCenterId);
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(cages.history(applied.assetIdentityId())).hasSize(1);
-		assertCreatedLink(applied, AssetType.CAGE);
+		assertCreatedLink(applied, "CAGE");
 	}
 
 	@Test
 	void rackAddThroughStagesWritesHistory() {
 		Long dataCenterId = progress(
-				AssetType.DATA_CENTER, ChangeAction.ADD, null, null, "{\"dataCenterName\":\"NY4\"}")
+				"DATA_CENTER", ChangeAction.ADD, null, null, "{\"dataCenterName\":\"NY4\"}")
 				.assetIdentityId();
 		Long cageId = progress(
-				AssetType.CAGE,
+				"CAGE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -453,7 +453,7 @@ class AssetChangeLifecycleTests {
 				.assetIdentityId();
 
 		ChangeDto applied = progress(
-				AssetType.RACK,
+				"RACK",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -463,20 +463,20 @@ class AssetChangeLifecycleTests {
 		assertThat(current.cageId()).isEqualTo(cageId);
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(racks.history(applied.assetIdentityId())).hasSize(1);
-		assertCreatedLink(applied, AssetType.RACK);
+		assertCreatedLink(applied, "RACK");
 	}
 
 	@Test
 	void rackDeviceTypeAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"rackDeviceTypeName\":\"Extranet Switch\",\"rackDeviceTypeKind\":\"EXTRANET_SWITCH\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.RACK_DEVICE_TYPE);
+		assertCreatedLink(add, "RACK_DEVICE_TYPE");
 
 		RackDeviceTypeDto current = rackDeviceTypes.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.rackDeviceTypeName()).isEqualTo("Extranet Switch");
@@ -486,7 +486,7 @@ class AssetChangeLifecycleTests {
 		assertThat(rackDeviceTypes.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.rackDeviceTypeHistoryId(),
@@ -502,7 +502,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.rackDeviceTypeHistoryId(),
@@ -518,14 +518,14 @@ class AssetChangeLifecycleTests {
 	@Test
 	void rackDevicePortTypeAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.RACK_DEVICE_PORT_TYPE,
+				"RACK_DEVICE_PORT_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"rackDevicePortTypeName\":\"Copper\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.RACK_DEVICE_PORT_TYPE);
+		assertCreatedLink(add, "RACK_DEVICE_PORT_TYPE");
 
 		RackDevicePortTypeDto current = rackDevicePortTypes.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.rackDevicePortTypeName()).isEqualTo("Copper");
@@ -534,7 +534,7 @@ class AssetChangeLifecycleTests {
 		assertThat(rackDevicePortTypes.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.RACK_DEVICE_PORT_TYPE,
+				"RACK_DEVICE_PORT_TYPE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.rackDevicePortTypeHistoryId(),
@@ -549,7 +549,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.RACK_DEVICE_PORT_TYPE,
+				"RACK_DEVICE_PORT_TYPE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.rackDevicePortTypeHistoryId(),
@@ -567,7 +567,7 @@ class AssetChangeLifecycleTests {
 		Long rackId = seedRack();
 		Long deviceTypeId = seedRackDeviceType("Extranet Switch", "EXTRANET_SWITCH");
 		ChangeDto applied = progress(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -579,7 +579,7 @@ class AssetChangeLifecycleTests {
 		assertThat(current.rackDeviceTypeId()).isEqualTo(deviceTypeId);
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(devices.history(applied.assetIdentityId())).hasSize(1);
-		assertCreatedLink(applied, AssetType.RACK_DEVICE);
+		assertCreatedLink(applied, "RACK_DEVICE");
 	}
 
 	@Test
@@ -588,7 +588,7 @@ class AssetChangeLifecycleTests {
 		Long deviceTypeId = seedRackDeviceType("Extranet Switch", "EXTRANET_SWITCH");
 		Long portTypeId = seedRackDevicePortType("Copper");
 		Long deviceId = progress(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -597,7 +597,7 @@ class AssetChangeLifecycleTests {
 				.assetIdentityId();
 
 		ChangeDto applied = progress(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -610,20 +610,20 @@ class AssetChangeLifecycleTests {
 		assertThat(current.status()).isEqualTo("Active");
 		assertThat(current.action()).isEqualTo("ADD");
 		assertThat(ports.history(applied.assetIdentityId())).hasSize(1);
-		assertCreatedLink(applied, AssetType.RACK_DEVICE_PORT);
+		assertCreatedLink(applied, "RACK_DEVICE_PORT");
 	}
 
 	@Test
 	void latencyAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.LATENCY,
+				"LATENCY",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"latencyName\":\"Low Latency\",\"latencyType\":\"LL\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.LATENCY);
+		assertCreatedLink(add, "LATENCY");
 
 		LatencyDto current = latencies.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.latencyName()).isEqualTo("Low Latency");
@@ -634,7 +634,7 @@ class AssetChangeLifecycleTests {
 		assertThat(latencies.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.LATENCY,
+				"LATENCY",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.latencyHistoryId(),
@@ -652,7 +652,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.LATENCY,
+				"LATENCY",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.latencyHistoryId(),
@@ -669,14 +669,14 @@ class AssetChangeLifecycleTests {
 	@Test
 	void speedAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.SPEED,
+				"SPEED",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"speedName\":\"1 Gigabit\",\"speedType\":\"1G\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.SPEED);
+		assertCreatedLink(add, "SPEED");
 
 		SpeedDto current = speeds.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.speedName()).isEqualTo("1 Gigabit");
@@ -687,7 +687,7 @@ class AssetChangeLifecycleTests {
 		assertThat(speeds.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.SPEED,
+				"SPEED",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.speedHistoryId(),
@@ -705,7 +705,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.SPEED,
+				"SPEED",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.speedHistoryId(),
@@ -734,7 +734,7 @@ class AssetChangeLifecycleTests {
 		Long marketSegmentId = seedMarketSegment("Equities Index", "Equities Index");
 
 		ChangeDto add = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -747,7 +747,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"providerFirmId\":" + providerFirmId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.CROSS_CONNECT);
+		assertCreatedLink(add, "CROSS_CONNECT");
 
 		CrossConnectDto current = crossConnects.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.crossConnectName()).isEqualTo("XC-1");
@@ -765,7 +765,7 @@ class AssetChangeLifecycleTests {
 		assertThat(crossConnects.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.crossConnectHistoryId(),
@@ -796,7 +796,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.crossConnectHistoryId(),
@@ -818,14 +818,14 @@ class AssetChangeLifecycleTests {
 	@Test
 	void chargeTypeAddUpdateTerminateThroughStages() {
 		ChangeDto add = progress(
-				AssetType.CHARGE_TYPE,
+				"CHARGE_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"chargeTypeName\":\"MRC\"}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.CHARGE_TYPE);
+		assertCreatedLink(add, "CHARGE_TYPE");
 
 		ChargeTypeDto current = chargeTypes.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.chargeTypeName()).isEqualTo("MRC");
@@ -834,7 +834,7 @@ class AssetChangeLifecycleTests {
 		assertThat(chargeTypes.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.CHARGE_TYPE,
+				"CHARGE_TYPE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.chargeTypeHistoryId(),
@@ -849,7 +849,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.CHARGE_TYPE,
+				"CHARGE_TYPE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.chargeTypeHistoryId(),
@@ -866,14 +866,14 @@ class AssetChangeLifecycleTests {
 	void crossConnectTypeAddUpdateTerminateThroughStages() {
 		Long chargeTypeId = seedChargeType("MRC");
 		ChangeDto add = progress(
-				AssetType.CROSS_CONNECT_TYPE,
+				"CROSS_CONNECT_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"crossConnectTypeName\":\"Single Mode Fiber\",\"chargeTypeId\":" + chargeTypeId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.CROSS_CONNECT_TYPE);
+		assertCreatedLink(add, "CROSS_CONNECT_TYPE");
 
 		CrossConnectTypeDto current = crossConnectTypes.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.crossConnectTypeName()).isEqualTo("Single Mode Fiber");
@@ -883,7 +883,7 @@ class AssetChangeLifecycleTests {
 		assertThat(crossConnectTypes.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.CROSS_CONNECT_TYPE,
+				"CROSS_CONNECT_TYPE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.crossConnectTypeHistoryId(),
@@ -899,7 +899,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.CROSS_CONNECT_TYPE,
+				"CROSS_CONNECT_TYPE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.crossConnectTypeHistoryId(),
@@ -917,14 +917,14 @@ class AssetChangeLifecycleTests {
 	void marketDataFeedTypeAddUpdateTerminateThroughStages() {
 		Long chargeTypeId = seedChargeType("Feed MRC");
 		ChangeDto add = progress(
-				AssetType.MARKET_DATA_FEED_TYPE,
+				"MARKET_DATA_FEED_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"marketDataFeedTypeName\":\"Depth\",\"chargeTypeId\":" + chargeTypeId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.MARKET_DATA_FEED_TYPE);
+		assertCreatedLink(add, "MARKET_DATA_FEED_TYPE");
 
 		MarketDataFeedTypeDto current = marketDataFeedTypes.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.marketDataFeedTypeName()).isEqualTo("Depth");
@@ -934,7 +934,7 @@ class AssetChangeLifecycleTests {
 		assertThat(marketDataFeedTypes.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.MARKET_DATA_FEED_TYPE,
+				"MARKET_DATA_FEED_TYPE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.marketDataFeedTypeHistoryId(),
@@ -950,7 +950,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.MARKET_DATA_FEED_TYPE,
+				"MARKET_DATA_FEED_TYPE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.marketDataFeedTypeHistoryId(),
@@ -975,7 +975,7 @@ class AssetChangeLifecycleTests {
 		Long otherFeedTypeId = seedMarketDataFeedType("Top of Book");
 		Long crossConnectTypeId = seedCrossConnectType("Single Mode Fiber");
 		Long crossConnectId = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -986,7 +986,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"billingFirmId\":" + billingFirmId + "}")
 				.assetIdentityId();
 		Long otherCrossConnectId = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -998,7 +998,7 @@ class AssetChangeLifecycleTests {
 				.assetIdentityId();
 
 		ChangeDto add = progress(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1008,7 +1008,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"billingFirmId\":" + billingFirmId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.MARKET_DATA_FEED);
+		assertCreatedLink(add, "MARKET_DATA_FEED");
 
 		MarketDataFeedDto current = marketDataFeeds.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.marketDataFeedName()).isEqualTo("FEED-A");
@@ -1023,7 +1023,7 @@ class AssetChangeLifecycleTests {
 		assertThat(marketDataFeeds.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.marketDataFeedHistoryId(),
@@ -1049,7 +1049,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.marketDataFeedHistoryId(),
@@ -1072,7 +1072,7 @@ class AssetChangeLifecycleTests {
 		Long speedId = seedSpeed("1 Gigabit", "1G");
 		Long crossConnectTypeId = seedCrossConnectType("Single Mode Fiber");
 		Long crossConnectId = progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1084,7 +1084,7 @@ class AssetChangeLifecycleTests {
 				.assetIdentityId();
 		Long[] portIds = seedTwoPorts();
 		Long sparePortId = progress(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1095,7 +1095,7 @@ class AssetChangeLifecycleTests {
 				.assetIdentityId();
 
 		ChangeDto add = progress(
-				AssetType.CABLE,
+				"CABLE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1104,7 +1104,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"crossConnectId\":" + crossConnectId + "}");
 		assertThat(add.stage()).isEqualTo(ChangeStage.COMMITTED);
 		assertThat(add.statusLabel()).isEqualTo("Active");
-		assertCreatedLink(add, AssetType.CABLE);
+		assertCreatedLink(add, "CABLE");
 
 		CableDto current = cables.findCurrent(add.assetIdentityId()).orElseThrow();
 		assertThat(current.cableName()).isEqualTo("CBL-1");
@@ -1117,7 +1117,7 @@ class AssetChangeLifecycleTests {
 		assertThat(cables.history(add.assetIdentityId())).hasSize(1);
 
 		ChangeDto update = progress(
-				AssetType.CABLE,
+				"CABLE",
 				ChangeAction.UPDATE,
 				add.assetIdentityId(),
 				current.cableHistoryId(),
@@ -1139,7 +1139,7 @@ class AssetChangeLifecycleTests {
 		assertCommittedLinks(update.changeId(), 2);
 
 		ChangeDto terminate = progress(
-				AssetType.CABLE,
+				"CABLE",
 				ChangeAction.TERMINATE,
 				add.assetIdentityId(),
 				afterUpdate.cableHistoryId(),
@@ -1160,7 +1160,7 @@ class AssetChangeLifecycleTests {
 		Long latencyId = seedLatency("Doc Latency", "LL");
 		Long speedId = seedSpeed("Doc Speed", "1G");
 		return progress(
-				AssetType.CROSS_CONNECT,
+				"CROSS_CONNECT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1175,7 +1175,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedFirm(String firmName) {
 		return progress(
-				AssetType.FIRM,
+				"FIRM",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1185,7 +1185,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedLatency(String latencyName, String latencyType) {
 		return progress(
-				AssetType.LATENCY,
+				"LATENCY",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1195,7 +1195,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedSpeed(String speedName, String speedType) {
 		return progress(
-				AssetType.SPEED,
+				"SPEED",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1205,7 +1205,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedMarketSegment(String marketSegmentName, String marketSegmentType) {
 		return progress(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1216,7 +1216,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedMarketDataFeedType(String marketDataFeedTypeName) {
 		return progress(
-				AssetType.MARKET_DATA_FEED_TYPE,
+				"MARKET_DATA_FEED_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1226,7 +1226,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedCrossConnectType(String crossConnectTypeName) {
 		return progress(
-				AssetType.CROSS_CONNECT_TYPE,
+				"CROSS_CONNECT_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1236,7 +1236,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedChargeType(String chargeTypeName) {
 		return progress(
-				AssetType.CHARGE_TYPE,
+				"CHARGE_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1246,7 +1246,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedRackDeviceType(String name, String kind) {
 		return progress(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1256,7 +1256,7 @@ class AssetChangeLifecycleTests {
 
 	private Long seedRackDevicePortType(String name) {
 		return progress(
-				AssetType.RACK_DEVICE_PORT_TYPE,
+				"RACK_DEVICE_PORT_TYPE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1269,7 +1269,7 @@ class AssetChangeLifecycleTests {
 		Long deviceTypeId = seedRackDeviceType("Extranet Switch", "EXTRANET_SWITCH");
 		Long portTypeId = seedRackDevicePortType("Copper");
 		Long deviceId = progress(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1277,7 +1277,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"rackDeviceTypeId\":" + deviceTypeId + "}")
 				.assetIdentityId();
 		Long portA = progress(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1285,7 +1285,7 @@ class AssetChangeLifecycleTests {
 						+ ",\"rackDevicePortTypeId\":" + portTypeId + "}")
 				.assetIdentityId();
 		Long portB = progress(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1297,17 +1297,17 @@ class AssetChangeLifecycleTests {
 
 	private Long seedRack() {
 		Long dataCenterId = progress(
-				AssetType.DATA_CENTER, ChangeAction.ADD, null, null, "{\"dataCenterName\":\"NY4\"}")
+				"DATA_CENTER", ChangeAction.ADD, null, null, "{\"dataCenterName\":\"NY4\"}")
 				.assetIdentityId();
 		Long cageId = progress(
-				AssetType.CAGE,
+				"CAGE",
 				ChangeAction.ADD,
 				null,
 				null,
 				"{\"cageName\":\"Cage-A\",\"dataCenterId\":" + dataCenterId + "}")
 				.assetIdentityId();
 		return progress(
-				AssetType.RACK,
+				"RACK",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -1316,7 +1316,7 @@ class AssetChangeLifecycleTests {
 	}
 
 	private ChangeDto progress(
-			AssetType assetType,
+			String assetType,
 			ChangeAction action,
 			Long assetIdentityId,
 			Long baseHistoryId,
@@ -1343,7 +1343,7 @@ class AssetChangeLifecycleTests {
 		return committed;
 	}
 
-	private void assertCreatedLink(ChangeDto applied, AssetType assetType) {
+	private void assertCreatedLink(ChangeDto applied, String assetType) {
 		assertThat(applied.historyLinks()).singleElement().satisfies(link -> {
 			assertThat(link.role()).isEqualTo(HistoryLinkRole.CREATED);
 			assertThat(link.assetType()).isEqualTo(assetType);

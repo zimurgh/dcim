@@ -3,8 +3,6 @@ package com.dcim.workflow;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.dcim.organization.firm.FirmIdentity;
-import com.dcim.organization.firm.FirmIdentityRepository;
 import com.dcim.organization.user.TestUsers;
 import com.dcim.organization.user.UserHistoryRepository;
 import com.dcim.organization.user.UserIdentityRepository;
@@ -27,9 +25,6 @@ class WorkflowServiceTests {
 
 	@Autowired
 	ChangeSpecService specs;
-
-	@Autowired
-	FirmIdentityRepository firmIdentities;
 
 	@Autowired
 	CageService cages;
@@ -61,7 +56,7 @@ class WorkflowServiceTests {
 		Long dataCenterId = changes.applyStaged(
 				changes.promoteToStaged(
 						changes.createUntracked("{\"dataCenterName\":\"NY4\"}", "tester").changeId(),
-						AssetType.DATA_CENTER,
+						"DATA_CENTER",
 						ChangeAction.ADD,
 						null,
 						null,
@@ -85,7 +80,7 @@ class WorkflowServiceTests {
 
 		ChangeDto stagedChange = changes.promoteToStaged(
 				draft.changeId(),
-				AssetType.CAGE,
+				"CAGE",
 				ChangeAction.ADD,
 				null,
 				null,
@@ -112,11 +107,20 @@ class WorkflowServiceTests {
 
 	@Test
 	void changeSpecRequiresChrecBeforePendingBillingAndApply() {
-		Long firmId = firmIdentities.save(new FirmIdentity()).getFirmId();
+		Long firmId = changes.applyStaged(
+				changes.promoteToStaged(
+						changes.createUntracked("{\"firmName\":\"Owner\"}", "tester").changeId(),
+						"FIRM",
+						ChangeAction.ADD,
+						null,
+						null,
+						null,
+						"tester").changeId(),
+				appliedBy).assetIdentityId();
 		Long dataCenterId = changes.applyStaged(
 				changes.promoteToStaged(
 						changes.createUntracked("{\"dataCenterName\":\"NY4\"}", "tester").changeId(),
-						AssetType.DATA_CENTER,
+						"DATA_CENTER",
 						ChangeAction.ADD,
 						null,
 						null,
@@ -130,7 +134,7 @@ class WorkflowServiceTests {
 		ChangeDto change = changes.createUntracked(
 				"{\"cageName\":\"Cage-A\",\"dataCenterId\":" + dataCenterId + "}",
 				"tester");
-		changes.promoteToStaged(change.changeId(), AssetType.CAGE, ChangeAction.ADD, null, null, null, "tester");
+		changes.promoteToStaged(change.changeId(), "CAGE", ChangeAction.ADD, null, null, null, "tester");
 		specs.addChange(spec.changeSpecId(), change.changeId());
 
 		assertThatThrownBy(() -> specs.submitPendingBilling(spec.changeSpecId()))

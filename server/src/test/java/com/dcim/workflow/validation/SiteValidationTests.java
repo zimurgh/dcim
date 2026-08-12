@@ -3,7 +3,6 @@ package com.dcim.workflow.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dcim.asset.ValidationCodes;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 
 import org.junit.jupiter.api.Test;
@@ -12,7 +11,7 @@ class SiteValidationTests extends ValidationTestSupport {
 
 	@Test
 	void dataCenterNameAddSucceedsWhenUnique() {
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -22,7 +21,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		String name = unique("NY");
 		seedDataCenter(name);
 
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -31,7 +30,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void cageNameAddSucceedsWhenUniqueWithinDataCenter() {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		ChangeDto staged = stageAdd(
-				AssetType.CAGE, "{\"cageName\":\"" + unique("Cage") + "\",\"dataCenterId\":" + dataCenterId + "}");
+				"CAGE", "{\"cageName\":\"" + unique("Cage") + "\",\"dataCenterId\":" + dataCenterId + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -43,7 +42,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		seedCage(cageName, dataCenterId);
 
 		ChangeDto staged = stageAdd(
-				AssetType.CAGE, "{\"cageName\":\"" + cageName + "\",\"dataCenterId\":" + dataCenterId + "}");
+				"CAGE", "{\"cageName\":\"" + cageName + "\",\"dataCenterId\":" + dataCenterId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -56,7 +55,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long secondDataCenterId = seedDataCenter(unique("DC"));
 
 		ChangeDto staged = stageAdd(
-				AssetType.CAGE, "{\"cageName\":\"" + cageName + "\",\"dataCenterId\":" + secondDataCenterId + "}");
+				"CAGE", "{\"cageName\":\"" + cageName + "\",\"dataCenterId\":" + secondDataCenterId + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -65,7 +64,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void rackNameAddSucceedsWhenUniqueWithinCage() {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		Long cageId = seedCage(unique("Cage"), dataCenterId);
-		ChangeDto staged = stageAdd(AssetType.RACK, "{\"rackName\":\"" + unique("Rack") + "\",\"cageId\":" + cageId + "}");
+		ChangeDto staged = stageAdd("RACK", "{\"rackName\":\"" + unique("Rack") + "\",\"cageId\":" + cageId + "}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -77,7 +76,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		String rackName = unique("Rack");
 		seedRack(rackName, cageId);
 
-		ChangeDto staged = stageAdd(AssetType.RACK, "{\"rackName\":\"" + rackName + "\",\"cageId\":" + cageId + "}");
+		ChangeDto staged = stageAdd("RACK", "{\"rackName\":\"" + rackName + "\",\"cageId\":" + cageId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -87,7 +86,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long rackId = seedRackInNewTree();
 		Long deviceTypeId = seedRackDeviceType(unique("DeviceType"), "EXTRANET_SWITCH");
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				"{\"rackDeviceName\":\"" + unique("sw") + "\",\"rackId\":" + rackId
 						+ ",\"rackDeviceTypeId\":" + deviceTypeId + "}");
 		assertValid(staged.changeId());
@@ -102,7 +101,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		seedRackDevice(deviceName, rackId, deviceTypeId);
 
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				"{\"rackDeviceName\":\"" + deviceName + "\",\"rackId\":" + rackId
 						+ ",\"rackDeviceTypeId\":" + deviceTypeId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
@@ -114,7 +113,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		SiteDeviceFixture device = seedDeviceInNewTree();
 		Long portTypeId = seedRackDevicePortType(unique("PortType"));
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				"{\"rackDevicePortName\":\"" + unique("eth") + "\",\"rackDeviceId\":" + device.rackDeviceId()
 						+ ",\"rackDevicePortTypeId\":" + portTypeId + "}");
 		assertValid(staged.changeId());
@@ -129,7 +128,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		seedRackDevicePort(portName, device.rackDeviceId(), portTypeId);
 
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				"{\"rackDevicePortName\":\"" + portName + "\",\"rackDeviceId\":" + device.rackDeviceId()
 						+ ",\"rackDevicePortTypeId\":" + portTypeId + "}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
@@ -139,7 +138,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	@Test
 	void rackDeviceTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				"{\"rackDeviceTypeName\":\"" + unique("DeviceType") + "\",\"rackDeviceTypeKind\":\"TAP\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
@@ -151,7 +150,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		seedRackDeviceType(name, "TAP");
 
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				"{\"rackDeviceTypeName\":\"" + name + "\",\"rackDeviceTypeKind\":\"PATCH_PANEL\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
@@ -160,7 +159,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	@Test
 	void rackDevicePortTypeNameAddSucceedsWhenUnique() {
 		ChangeDto staged = stageAdd(
-				AssetType.RACK_DEVICE_PORT_TYPE, "{\"rackDevicePortTypeName\":\"" + unique("PortType") + "\"}");
+				"RACK_DEVICE_PORT_TYPE", "{\"rackDevicePortTypeName\":\"" + unique("PortType") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -170,7 +169,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		String name = unique("PortType");
 		seedRackDevicePortType(name);
 
-		ChangeDto staged = stageAdd(AssetType.RACK_DEVICE_PORT_TYPE, "{\"rackDevicePortTypeName\":\"" + name + "\"}");
+		ChangeDto staged = stageAdd("RACK_DEVICE_PORT_TYPE", "{\"rackDevicePortTypeName\":\"" + name + "\"}");
 		assertInvalid(staged.changeId(), ValidationCodes.NAME_CLASH);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.NAME_CLASH);
 	}
@@ -180,7 +179,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		seedCage(unique("Cage"), dataCenterId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		ChangeDto staged = stageTerminateCurrent("DATA_CENTER", dataCenterId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -189,7 +188,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void terminateDataCenterSucceedsWhenNoLiveCages() {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		ChangeDto staged = stageTerminateCurrent("DATA_CENTER", dataCenterId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -200,7 +199,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long cageId = seedCage(unique("Cage"), dataCenterId);
 		seedRack(unique("Rack"), cageId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CAGE, cageId);
+		ChangeDto staged = stageTerminateCurrent("CAGE", cageId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -210,7 +209,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		Long cageId = seedCage(unique("Cage"), dataCenterId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.CAGE, cageId);
+		ChangeDto staged = stageTerminateCurrent("CAGE", cageId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -221,7 +220,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long deviceTypeId = seedRackDeviceType(unique("DeviceType"), "EXTRANET_SWITCH");
 		seedRackDevice(unique("sw"), rackId, deviceTypeId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK, rackId);
+		ChangeDto staged = stageTerminateCurrent("RACK", rackId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -230,7 +229,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void terminateRackSucceedsWhenNoLiveDevices() {
 		Long rackId = seedRackInNewTree();
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK, rackId);
+		ChangeDto staged = stageTerminateCurrent("RACK", rackId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -241,7 +240,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long portTypeId = seedRackDevicePortType(unique("PortType"));
 		seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE, device.rackDeviceId());
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE", device.rackDeviceId());
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -250,7 +249,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void terminateRackDeviceSucceedsWhenNoLivePorts() {
 		SiteDeviceFixture device = seedDeviceInNewTree();
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE, device.rackDeviceId());
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE", device.rackDeviceId());
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -260,7 +259,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long[] ports = seedPortPair();
 		seedCable(unique("CBL"), ports[0], ports[1]);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_PORT, ports[0]);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_PORT", ports[0]);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -271,7 +270,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long portTypeId = seedRackDevicePortType(unique("PortType"));
 		Long portId = seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_PORT, portId);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_PORT", portId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -282,7 +281,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long deviceTypeId = seedRackDeviceType(unique("DeviceType"), "EXTRANET_SWITCH");
 		seedRackDevice(unique("sw"), rackId, deviceTypeId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_TYPE, deviceTypeId);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_TYPE", deviceTypeId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -291,7 +290,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void terminateRackDeviceTypeSucceedsWhenUnreferenced() {
 		Long deviceTypeId = seedRackDeviceType(unique("DeviceType"), "EXTRANET_SWITCH");
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_TYPE, deviceTypeId);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_TYPE", deviceTypeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -302,7 +301,7 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long portTypeId = seedRackDevicePortType(unique("PortType"));
 		seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_PORT_TYPE, portTypeId);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_PORT_TYPE", portTypeId);
 		assertInvalid(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(staged.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -311,7 +310,7 @@ class SiteValidationTests extends ValidationTestSupport {
 	void terminateRackDevicePortTypeSucceedsWhenUnreferenced() {
 		Long portTypeId = seedRackDevicePortType(unique("PortType"));
 
-		ChangeDto staged = stageTerminateCurrent(AssetType.RACK_DEVICE_PORT_TYPE, portTypeId);
+		ChangeDto staged = stageTerminateCurrent("RACK_DEVICE_PORT_TYPE", portTypeId);
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -323,8 +322,8 @@ class SiteValidationTests extends ValidationTestSupport {
 		Long portId = seedRackDevicePort(unique("eth"), device.rackDeviceId(), portTypeId);
 		Long ownerFirmId = seedFirm(unique("Owner"));
 
-		ChangeDto terminatePort = stageTerminateCurrent(AssetType.RACK_DEVICE_PORT, portId);
-		ChangeDto terminateDevice = stageTerminateCurrent(AssetType.RACK_DEVICE, device.rackDeviceId());
+		ChangeDto terminatePort = stageTerminateCurrent("RACK_DEVICE_PORT", portId);
+		ChangeDto terminateDevice = stageTerminateCurrent("RACK_DEVICE", device.rackDeviceId());
 
 		var spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), terminatePort.changeId());

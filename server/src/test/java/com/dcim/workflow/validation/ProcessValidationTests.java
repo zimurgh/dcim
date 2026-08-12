@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.dcim.asset.ValidationCodes;
 import com.dcim.asset.ValidationIssue;
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeAction;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeSpecDto;
@@ -24,7 +23,7 @@ class ProcessValidationTests extends ValidationTestSupport {
 		assertThat(amended.stage()).isEqualTo(ChangeStage.UNTRACKED);
 
 		ChangeDto staged = changes.promoteToStaged(
-				draft.changeId(), AssetType.DATA_CENTER, ChangeAction.ADD, null, null,
+				draft.changeId(), "DATA_CENTER", ChangeAction.ADD, null, null,
 				"{\"unknownField\":\"x\"}", "tester");
 		assertThat(staged.stage()).isEqualTo(ChangeStage.STAGED);
 
@@ -33,7 +32,7 @@ class ProcessValidationTests extends ValidationTestSupport {
 
 	@Test
 	void applyIsHardGate_blocksAndLeavesLedgerUnmutatedWhenIssuesRemain() {
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"unknownField\":\"x\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"unknownField\":\"x\"}");
 
 		assertApplyBlocked(staged.changeId(), ValidationCodes.UNKNOWN_FIELD);
 
@@ -42,7 +41,7 @@ class ProcessValidationTests extends ValidationTestSupport {
 
 	@Test
 	void applyIsHardGate_succeedsOnceIssuesAreResolved() {
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		assertValid(staged.changeId());
 		assertApplySucceeds(staged.changeId());
 	}
@@ -52,7 +51,7 @@ class ProcessValidationTests extends ValidationTestSupport {
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		seedCage(unique("Cage"), dataCenterId);
 
-		ChangeDto parentAlone = stageTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		ChangeDto parentAlone = stageTerminateCurrent("DATA_CENTER", dataCenterId);
 		assertInvalid(parentAlone.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 		assertApplyBlocked(parentAlone.changeId(), ValidationCodes.ACTIVE_CHILDREN);
 	}
@@ -63,8 +62,8 @@ class ProcessValidationTests extends ValidationTestSupport {
 		Long cageId = seedCage(unique("Cage"), dataCenterId);
 		Long ownerFirmId = seedFirm(unique("Owner"));
 
-		ChangeDto terminateCage = stageTerminateCurrent(AssetType.CAGE, cageId);
-		ChangeDto terminateDataCenter = stageTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		ChangeDto terminateCage = stageTerminateCurrent("CAGE", cageId);
+		ChangeDto terminateDataCenter = stageTerminateCurrent("DATA_CENTER", dataCenterId);
 
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), terminateCage.changeId());
@@ -82,8 +81,8 @@ class ProcessValidationTests extends ValidationTestSupport {
 	void changeSpecValidate_aggregatesIssuesFromEveryMember() {
 		Long ownerFirmId = seedFirm(unique("Owner"));
 
-		ChangeDto badDataCenter = stageAdd(AssetType.DATA_CENTER, "{}");
-		ChangeDto badCage = stageAdd(AssetType.CAGE, "{\"cageName\":\"Cage-X\",\"dataCenterId\":999999}");
+		ChangeDto badDataCenter = stageAdd("DATA_CENTER", "{}");
+		ChangeDto badCage = stageAdd("CAGE", "{\"cageName\":\"Cage-X\",\"dataCenterId\":999999}");
 
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), badDataCenter.changeId());

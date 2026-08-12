@@ -39,14 +39,14 @@ class ChangeAndChangeSpecViewTests extends ValidationTestSupport {
 		XcDeps deps = seedXcDeps();
 		ChangeSpecDto spec = createSpec(deps.ownerFirmId());
 		ChangeDto staged = stageAdd(
-				AssetType.CAGE,
+				"CAGE",
 				json(Map.of("cageName", unique("Cage"), "dataCenterId", seedDataCenter(unique("DC")))));
 		addToSpec(spec.changeSpecId(), staged.changeId());
 
 		ChangeView view = changeViews.findById(staged.changeId()).orElseThrow();
 		assertThat(view.getStage()).isEqualTo(ChangeStage.STAGED);
 		assertThat(view.getStatusLabel()).isEqualTo("Pending Add");
-		assertThat(view.getAssetType()).isEqualTo(AssetType.CAGE);
+		assertThat(view.getAssetType()).isEqualTo("CAGE");
 		assertThat(view.getAction()).isEqualTo(ChangeAction.ADD);
 		assertThat(view.getChangeSpecId()).isEqualTo(spec.changeSpecId());
 		assertThat(view.getBody()).isNotBlank();
@@ -72,7 +72,7 @@ class ChangeAndChangeSpecViewTests extends ValidationTestSupport {
 
 		Long dataCenterId = seedDataCenter(unique("DC"));
 		ChangeDto committed = applyAdd(
-				AssetType.CAGE,
+				"CAGE",
 				json(Map.of("cageName", unique("Cage"), "dataCenterId", dataCenterId)));
 		ChangeView applied = changeViews.findById(committed.changeId()).orElseThrow();
 		assertThat(applied.getStage()).isEqualTo(ChangeStage.COMMITTED);

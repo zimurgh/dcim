@@ -96,7 +96,7 @@ class ChangeController {
 	}
 
 	record StageRequest(
-			AssetType assetType,
+			String assetType,
 			ChangeAction action,
 			Long assetIdentityId,
 			Long baseHistoryId,

@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -48,7 +47,7 @@ class DataCenterServiceTests extends ChangeTestSupport {
 
 	@Test
 	void addsDataCenterThroughChangeWorkflow() {
-		Long dataCenterId = applyAdd(AssetType.DATA_CENTER, json(Map.of("dataCenterName", "LD4")))
+		Long dataCenterId = applyAdd("DATA_CENTER", json(Map.of("dataCenterName", "LD4")))
 				.assetIdentityId();
 
 		DataCenterDto current = dataCenters.findCurrent(dataCenterId).orElseThrow();
@@ -65,7 +64,7 @@ class DataCenterServiceTests extends ChangeTestSupport {
 	void updatesDataCenterThroughChangeWorkflow() {
 		Long dataCenterId = seedDataCenter("NY4");
 
-		applyUpdateCurrent(AssetType.DATA_CENTER, dataCenterId, json(Map.of("dataCenterName", "NY5")));
+		applyUpdateCurrent("DATA_CENTER", dataCenterId, json(Map.of("dataCenterName", "NY5")));
 
 		DataCenterDto current = dataCenters.findCurrent(dataCenterId).orElseThrow();
 		assertThat(current.dataCenterName()).isEqualTo("NY5");
@@ -84,7 +83,7 @@ class DataCenterServiceTests extends ChangeTestSupport {
 	void terminatesDataCenterThroughChangeWorkflow() {
 		Long dataCenterId = seedDataCenter("NY4");
 
-		applyTerminateCurrent(AssetType.DATA_CENTER, dataCenterId);
+		applyTerminateCurrent("DATA_CENTER", dataCenterId);
 
 		DataCenterDto current = dataCenters.findCurrent(dataCenterId).orElseThrow();
 		assertThat(current.dataCenterName()).isEqualTo("NY4");

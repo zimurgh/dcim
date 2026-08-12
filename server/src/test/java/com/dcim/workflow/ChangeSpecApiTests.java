@@ -24,7 +24,7 @@ class ChangeSpecApiTests extends ValidationTestSupport {
 	@Test
 	void createListValidateApplyAndCancelViaHttp() throws Exception {
 		Long ownerFirmId = seedFirm(unique("Owner"));
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 
 		MvcResult created = mvc.perform(post("/api/change-specs")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -88,7 +88,7 @@ class ChangeSpecApiTests extends ValidationTestSupport {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("CANCELLED"));
 
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		mvc.perform(post("/api/change-specs/{id}/changes/{changeId}", specId, staged.changeId()))
 				.andExpect(status().isBadRequest());
 	}
@@ -96,7 +96,7 @@ class ChangeSpecApiTests extends ValidationTestSupport {
 	@Test
 	void removeChangeViaHttp() throws Exception {
 		Long ownerFirmId = seedFirm(unique("Owner"));
-		ChangeDto staged = stageAdd(AssetType.DATA_CENTER, "{\"dataCenterName\":\"" + unique("NY") + "\"}");
+		ChangeDto staged = stageAdd("DATA_CENTER", "{\"dataCenterName\":\"" + unique("NY") + "\"}");
 		ChangeSpecDto spec = createSpec(ownerFirmId);
 		addToSpec(spec.changeSpecId(), staged.changeId());
 

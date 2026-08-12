@@ -1,5 +1,7 @@
 package com.dcim.workflow;
 
+import com.dcim.workflow.assettype.AssetTypeIdentity;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -15,9 +17,9 @@ public class ChangeCommittedHistory {
 	@JoinColumn(name = "CHANGE_ID", nullable = false)
 	private ChangeCommitted committed;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "ASSET_TYPE", nullable = false, length = 50)
-	private AssetType assetType;
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	@JoinColumn(name = "ASSET_TYPE_ID", nullable = false)
+	private AssetTypeIdentity assetType;
 
 	@Column(name = "HISTORY_ID", nullable = false)
 	private Long historyId;
@@ -31,7 +33,7 @@ public class ChangeCommittedHistory {
 
 	public ChangeCommittedHistory(
 			ChangeCommitted committed,
-			AssetType assetType,
+			AssetTypeIdentity assetType,
 			Long historyId,
 			HistoryLinkRole role) {
 		this.committed = committed;
@@ -48,7 +50,7 @@ public class ChangeCommittedHistory {
 		return committed;
 	}
 
-	public AssetType getAssetType() {
+	public AssetTypeIdentity getAssetType() {
 		return assetType;
 	}
 

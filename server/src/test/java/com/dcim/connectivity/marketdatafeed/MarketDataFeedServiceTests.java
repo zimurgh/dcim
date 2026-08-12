@@ -2,7 +2,6 @@ package com.dcim.connectivity.marketdatafeed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeTestSupport;
 
@@ -17,7 +16,7 @@ class MarketDataFeedServiceTests extends ChangeTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 
 		ChangeDto applied = applyAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				feedPayload("FEED-A", crossConnectId, feedTypeId, deps, null));
 
 		MarketDataFeedDto current = marketDataFeeds.findCurrent(applied.assetIdentityId()).orElseThrow();
@@ -43,11 +42,11 @@ class MarketDataFeedServiceTests extends ChangeTestSupport {
 		Long providerFirmId = seedFirm(unique("Provider"));
 
 		ChangeDto added = applyAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				feedPayload("FEED-A", crossConnectId, feedTypeId, deps, null));
 
 		applyUpdateCurrent(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				added.assetIdentityId(),
 				feedPayload("FEED-A2", otherCrossConnectId, otherFeedTypeId, deps, providerFirmId));
 
@@ -70,10 +69,10 @@ class MarketDataFeedServiceTests extends ChangeTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 
 		ChangeDto added = applyAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				feedPayload("FEED-A", crossConnectId, feedTypeId, deps, null));
 
-		applyTerminateCurrent(AssetType.MARKET_DATA_FEED, added.assetIdentityId());
+		applyTerminateCurrent("MARKET_DATA_FEED", added.assetIdentityId());
 
 		MarketDataFeedDto current = marketDataFeeds.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");

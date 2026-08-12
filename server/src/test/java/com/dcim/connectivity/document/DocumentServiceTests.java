@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeDto;
 import com.dcim.workflow.ChangeTestSupport;
 
@@ -17,7 +16,7 @@ class DocumentServiceTests extends ChangeTestSupport {
 		XcDeps deps = seedXcDeps();
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 		ChangeDto applied = applyAdd(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				json(Map.of("documentName", "LOA-1", "crossConnectId", crossConnectId)));
 
 		DocumentDto current = documents.findCurrent(applied.assetIdentityId()).orElseThrow();
@@ -35,11 +34,11 @@ class DocumentServiceTests extends ChangeTestSupport {
 		Long crossConnectId = seedCrossConnect(unique("CKT1"), deps);
 		Long otherCrossConnectId = seedCrossConnect(unique("CKT2"), deps);
 		ChangeDto added = applyAdd(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				json(Map.of("documentName", "LOA-1", "crossConnectId", crossConnectId)));
 
 		applyUpdateCurrent(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				added.assetIdentityId(),
 				json(Map.of("documentName", "LOA-1B", "crossConnectId", otherCrossConnectId)));
 
@@ -58,10 +57,10 @@ class DocumentServiceTests extends ChangeTestSupport {
 		XcDeps deps = seedXcDeps();
 		Long crossConnectId = seedCrossConnect(unique("CKT"), deps);
 		ChangeDto added = applyAdd(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				json(Map.of("documentName", "LOA-1", "crossConnectId", crossConnectId)));
 
-		applyTerminateCurrent(AssetType.DOCUMENT, added.assetIdentityId());
+		applyTerminateCurrent("DOCUMENT", added.assetIdentityId());
 
 		DocumentDto current = documents.findCurrent(added.assetIdentityId()).orElseThrow();
 		assertThat(current.status()).isEqualTo("Terminated");

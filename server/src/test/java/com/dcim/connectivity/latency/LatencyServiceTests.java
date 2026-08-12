@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -14,7 +13,7 @@ class LatencyServiceTests extends ChangeTestSupport {
 	@Test
 	void addsUpdatesAndTerminatesLatencyThroughChangeWorkflow() {
 		Long latencyId = applyAdd(
-				AssetType.LATENCY,
+				"LATENCY",
 				json(Map.of("latencyName", unique("Latency"), "latencyType", "LL")))
 				.assetIdentityId();
 
@@ -25,13 +24,13 @@ class LatencyServiceTests extends ChangeTestSupport {
 		assertThat(latencies.history(latencyId)).hasSize(1);
 
 		applyUpdateCurrent(
-				AssetType.LATENCY,
+				"LATENCY",
 				latencyId,
 				json(Map.of("latencyName", unique("Latency"), "latencyType", "ULL")));
 		assertThat(latencies.findCurrent(latencyId).orElseThrow().latencyType()).isEqualTo(LatencyType.ULL);
 		assertThat(latencies.history(latencyId)).hasSize(2);
 
-		applyTerminateCurrent(AssetType.LATENCY, latencyId);
+		applyTerminateCurrent("LATENCY", latencyId);
 		assertThat(latencies.findCurrent(latencyId).orElseThrow().status()).isEqualTo("Terminated");
 		assertThat(latencies.history(latencyId)).hasSize(3);
 	}

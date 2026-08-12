@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
 
-import com.dcim.workflow.AssetType;
 import com.dcim.workflow.ChangeTestSupport;
 
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,7 @@ class UserServiceTests extends ChangeTestSupport {
 	@Test
 	void addsUserThroughChangeWorkflow() {
 		Long userId = applyAdd(
-				AssetType.USER,
+				"USER",
 				json(Map.of("userName", "bob", "isInitiator", true)))
 				.assetIdentityId();
 
@@ -69,12 +68,12 @@ class UserServiceTests extends ChangeTestSupport {
 	@Test
 	void updatesUserThroughChangeWorkflow() {
 		Long userId = applyAdd(
-				AssetType.USER,
+				"USER",
 				json(Map.of("userName", "bob", "isInitiator", false)))
 				.assetIdentityId();
 
 		applyUpdateCurrent(
-				AssetType.USER,
+				"USER",
 				userId,
 				json(Map.of("userName", "robert", "isInitiator", true)));
 
@@ -96,11 +95,11 @@ class UserServiceTests extends ChangeTestSupport {
 	@Test
 	void terminatesUserThroughChangeWorkflow() {
 		Long userId = applyAdd(
-				AssetType.USER,
+				"USER",
 				json(Map.of("userName", "bob", "isInitiator", true)))
 				.assetIdentityId();
 
-		applyTerminateCurrent(AssetType.USER, userId);
+		applyTerminateCurrent("USER", userId);
 
 		UserDto current = users.findCurrent(userId).orElseThrow();
 		assertThat(current.userName()).isEqualTo("bob");

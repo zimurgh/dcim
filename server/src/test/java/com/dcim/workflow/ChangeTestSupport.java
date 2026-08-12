@@ -27,6 +27,7 @@ import com.dcim.site.rackdevice.RackDeviceService;
 import com.dcim.site.rackdeviceport.RackDevicePortService;
 import com.dcim.site.rackdeviceporttype.RackDevicePortTypeService;
 import com.dcim.site.rackdevicetype.RackDeviceTypeService;
+import com.dcim.workflow.assettype.AssetTypeService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,6 +114,9 @@ public abstract class ChangeTestSupport {
 	@Autowired
 	protected CableService cables;
 
+	@Autowired
+	protected AssetTypeService assetTypes;
+
 	protected Long appliedBy;
 
 	private final AtomicLong sequence = new AtomicLong();
@@ -145,7 +149,7 @@ public abstract class ChangeTestSupport {
 	}
 
 	protected ChangeDto stage(
-			AssetType assetType,
+			String assetType,
 			ChangeAction action,
 			Long assetIdentityId,
 			Long baseHistoryId,
@@ -155,28 +159,28 @@ public abstract class ChangeTestSupport {
 				untracked.changeId(), assetType, action, assetIdentityId, baseHistoryId, null, "tester");
 	}
 
-	protected ChangeDto stageAdd(AssetType assetType, String payload) {
+	protected ChangeDto stageAdd(String assetType, String payload) {
 		return stage(assetType, ChangeAction.ADD, null, null, payload);
 	}
 
-	protected ChangeDto stageUpdate(AssetType assetType, Long assetIdentityId, Long baseHistoryId, String payload) {
+	protected ChangeDto stageUpdate(String assetType, Long assetIdentityId, Long baseHistoryId, String payload) {
 		return stage(assetType, ChangeAction.UPDATE, assetIdentityId, baseHistoryId, payload);
 	}
 
-	protected ChangeDto stageTerminate(AssetType assetType, Long assetIdentityId, Long baseHistoryId) {
+	protected ChangeDto stageTerminate(String assetType, Long assetIdentityId, Long baseHistoryId) {
 		return stage(assetType, ChangeAction.TERMINATE, assetIdentityId, baseHistoryId, "{}");
 	}
 
-	protected ChangeDto stageTerminateCurrent(AssetType assetType, Long assetIdentityId) {
+	protected ChangeDto stageTerminateCurrent(String assetType, Long assetIdentityId) {
 		return stageTerminate(assetType, assetIdentityId, currentHistoryId(assetType, assetIdentityId));
 	}
 
-	protected ChangeDto applyAdd(AssetType assetType, String payload) {
+	protected ChangeDto applyAdd(String assetType, String payload) {
 		return changes.applyStaged(stageAdd(assetType, payload).changeId(), appliedBy);
 	}
 
 	protected ChangeDto applyUpdate(
-			AssetType assetType,
+			String assetType,
 			Long assetIdentityId,
 			Long baseHistoryId,
 			String payload) {
@@ -185,59 +189,61 @@ public abstract class ChangeTestSupport {
 				appliedBy);
 	}
 
-	protected ChangeDto applyUpdateCurrent(AssetType assetType, Long assetIdentityId, String payload) {
+	protected ChangeDto applyUpdateCurrent(String assetType, Long assetIdentityId, String payload) {
 		return applyUpdate(assetType, assetIdentityId, currentHistoryId(assetType, assetIdentityId), payload);
 	}
 
-	protected ChangeDto applyTerminate(AssetType assetType, Long assetIdentityId, Long baseHistoryId) {
+	protected ChangeDto applyTerminate(String assetType, Long assetIdentityId, Long baseHistoryId) {
 		return changes.applyStaged(
 				stageTerminate(assetType, assetIdentityId, baseHistoryId).changeId(),
 				appliedBy);
 	}
 
-	protected ChangeDto applyTerminateCurrent(AssetType assetType, Long assetIdentityId) {
+	protected ChangeDto applyTerminateCurrent(String assetType, Long assetIdentityId) {
 		return applyTerminate(assetType, assetIdentityId, currentHistoryId(assetType, assetIdentityId));
 	}
 
 	/** Current (VALID_TO is null) history id for an identity. */
-	protected Long currentHistoryId(AssetType assetType, Long identityId) {
+	protected Long currentHistoryId(String assetType, Long identityId) {
 		return switch (assetType) {
-			case DATA_CENTER -> dataCenters.findCurrent(identityId).orElseThrow().dataCenterHistoryId();
-			case CAGE -> cages.findCurrent(identityId).orElseThrow().cageHistoryId();
-			case RACK -> racks.findCurrent(identityId).orElseThrow().rackHistoryId();
-			case RACK_DEVICE -> rackDevices.findCurrent(identityId).orElseThrow().rackDeviceHistoryId();
-			case RACK_DEVICE_PORT -> rackDevicePorts.findCurrent(identityId).orElseThrow().rackDevicePortHistoryId();
-			case RACK_DEVICE_TYPE -> rackDeviceTypes.findCurrent(identityId).orElseThrow().rackDeviceTypeHistoryId();
-			case RACK_DEVICE_PORT_TYPE -> rackDevicePortTypes.findCurrent(identityId)
+			case "DATA_CENTER" -> dataCenters.findCurrent(identityId).orElseThrow().dataCenterHistoryId();
+			case "CAGE" -> cages.findCurrent(identityId).orElseThrow().cageHistoryId();
+			case "RACK" -> racks.findCurrent(identityId).orElseThrow().rackHistoryId();
+			case "RACK_DEVICE" -> rackDevices.findCurrent(identityId).orElseThrow().rackDeviceHistoryId();
+			case "RACK_DEVICE_PORT" -> rackDevicePorts.findCurrent(identityId).orElseThrow().rackDevicePortHistoryId();
+			case "RACK_DEVICE_TYPE" -> rackDeviceTypes.findCurrent(identityId).orElseThrow().rackDeviceTypeHistoryId();
+			case "RACK_DEVICE_PORT_TYPE" -> rackDevicePortTypes.findCurrent(identityId)
 					.orElseThrow()
 					.rackDevicePortTypeHistoryId();
-			case CROSS_CONNECT -> crossConnects.findCurrent(identityId).orElseThrow().crossConnectHistoryId();
-			case DOCUMENT -> documents.findCurrent(identityId).orElseThrow().documentHistoryId();
-			case CABLE -> cables.findCurrent(identityId).orElseThrow().cableHistoryId();
-			case LATENCY -> latencies.findCurrent(identityId).orElseThrow().latencyHistoryId();
-			case SPEED -> speeds.findCurrent(identityId).orElseThrow().speedHistoryId();
-			case CHARGE_TYPE -> chargeTypes.findCurrent(identityId).orElseThrow().chargeTypeHistoryId();
-			case CROSS_CONNECT_TYPE -> crossConnectTypes.findCurrent(identityId)
+			case "CROSS_CONNECT" -> crossConnects.findCurrent(identityId).orElseThrow().crossConnectHistoryId();
+			case "DOCUMENT" -> documents.findCurrent(identityId).orElseThrow().documentHistoryId();
+			case "CABLE" -> cables.findCurrent(identityId).orElseThrow().cableHistoryId();
+			case "LATENCY" -> latencies.findCurrent(identityId).orElseThrow().latencyHistoryId();
+			case "SPEED" -> speeds.findCurrent(identityId).orElseThrow().speedHistoryId();
+			case "CHARGE_TYPE" -> chargeTypes.findCurrent(identityId).orElseThrow().chargeTypeHistoryId();
+			case "CROSS_CONNECT_TYPE" -> crossConnectTypes.findCurrent(identityId)
 					.orElseThrow()
 					.crossConnectTypeHistoryId();
-			case MARKET_DATA_FEED -> marketDataFeeds.findCurrent(identityId).orElseThrow().marketDataFeedHistoryId();
-			case MARKET_DATA_FEED_TYPE -> marketDataFeedTypes.findCurrent(identityId)
+			case "MARKET_DATA_FEED" -> marketDataFeeds.findCurrent(identityId).orElseThrow().marketDataFeedHistoryId();
+			case "MARKET_DATA_FEED_TYPE" -> marketDataFeedTypes.findCurrent(identityId)
 					.orElseThrow()
 					.marketDataFeedTypeHistoryId();
-			case FIRM -> firms.findCurrent(identityId).orElseThrow().firmHistoryId();
-			case EXCHANGE -> exchanges.findCurrent(identityId).orElseThrow().exchangeHistoryId();
-			case MARKET_SEGMENT -> marketSegments.findCurrent(identityId).orElseThrow().marketSegmentHistoryId();
-			case USER -> users.findCurrent(identityId).orElseThrow().userHistoryId();
+			case "FIRM" -> firms.findCurrent(identityId).orElseThrow().firmHistoryId();
+			case "EXCHANGE" -> exchanges.findCurrent(identityId).orElseThrow().exchangeHistoryId();
+			case "MARKET_SEGMENT" -> marketSegments.findCurrent(identityId).orElseThrow().marketSegmentHistoryId();
+			case "USER" -> users.findCurrent(identityId).orElseThrow().userHistoryId();
+			case "ASSET_TYPE" -> assetTypes.findCurrent(identityId).orElseThrow().assetTypeHistoryId();
+			default -> throw new IllegalArgumentException("Unknown asset type: " + assetType);
 		};
 	}
 
 	protected Long seedFirm(String name) {
-		return applyAdd(AssetType.FIRM, json(Map.of("firmName", name))).assetIdentityId();
+		return applyAdd("FIRM", json(Map.of("firmName", name))).assetIdentityId();
 	}
 
 	protected Long seedExchange(String name, String type) {
 		return applyAdd(
-				AssetType.EXCHANGE,
+				"EXCHANGE",
 				json(Map.of(
 						"exchangeName", name,
 						"exchangeCode", name,
@@ -248,43 +254,43 @@ public abstract class ChangeTestSupport {
 
 	protected Long seedMarketSegment(String name, String type) {
 		return applyAdd(
-				AssetType.MARKET_SEGMENT,
+				"MARKET_SEGMENT",
 				json(Map.of("marketSegmentName", name, "marketSegmentType", type)))
 				.assetIdentityId();
 	}
 
 	protected Long seedUser(String name) {
-		return applyAdd(AssetType.USER, json(Map.of("userName", name))).assetIdentityId();
+		return applyAdd("USER", json(Map.of("userName", name))).assetIdentityId();
 	}
 
 	protected Long seedDataCenter(String name) {
-		return applyAdd(AssetType.DATA_CENTER, json(Map.of("dataCenterName", name))).assetIdentityId();
+		return applyAdd("DATA_CENTER", json(Map.of("dataCenterName", name))).assetIdentityId();
 	}
 
 	protected Long seedCage(String name, Long dataCenterId) {
-		return applyAdd(AssetType.CAGE, json(Map.of("cageName", name, "dataCenterId", dataCenterId)))
+		return applyAdd("CAGE", json(Map.of("cageName", name, "dataCenterId", dataCenterId)))
 				.assetIdentityId();
 	}
 
 	protected Long seedRack(String name, Long cageId) {
-		return applyAdd(AssetType.RACK, json(Map.of("rackName", name, "cageId", cageId))).assetIdentityId();
+		return applyAdd("RACK", json(Map.of("rackName", name, "cageId", cageId))).assetIdentityId();
 	}
 
 	protected Long seedRackDeviceType(String name, String kind) {
 		return applyAdd(
-				AssetType.RACK_DEVICE_TYPE,
+				"RACK_DEVICE_TYPE",
 				json(Map.of("rackDeviceTypeName", name, "rackDeviceTypeKind", kind)))
 				.assetIdentityId();
 	}
 
 	protected Long seedRackDevicePortType(String name) {
-		return applyAdd(AssetType.RACK_DEVICE_PORT_TYPE, json(Map.of("rackDevicePortTypeName", name)))
+		return applyAdd("RACK_DEVICE_PORT_TYPE", json(Map.of("rackDevicePortTypeName", name)))
 				.assetIdentityId();
 	}
 
 	protected Long seedRackDevice(String name, Long rackId, Long rackDeviceTypeId) {
 		return applyAdd(
-				AssetType.RACK_DEVICE,
+				"RACK_DEVICE",
 				json(Map.of(
 						"rackDeviceName", name,
 						"rackId", rackId,
@@ -294,7 +300,7 @@ public abstract class ChangeTestSupport {
 
 	protected Long seedRackDevicePort(String name, Long rackDeviceId, Long rackDevicePortTypeId) {
 		return applyAdd(
-				AssetType.RACK_DEVICE_PORT,
+				"RACK_DEVICE_PORT",
 				json(Map.of(
 						"rackDevicePortName", name,
 						"rackDeviceId", rackDeviceId,
@@ -341,25 +347,25 @@ public abstract class ChangeTestSupport {
 	}
 
 	protected Long seedLatency(String name, String type) {
-		return applyAdd(AssetType.LATENCY, json(Map.of("latencyName", name, "latencyType", type)))
+		return applyAdd("LATENCY", json(Map.of("latencyName", name, "latencyType", type)))
 				.assetIdentityId();
 	}
 
 	protected Long seedSpeed(String name, String type) {
-		return applyAdd(AssetType.SPEED, json(Map.of("speedName", name, "speedType", type))).assetIdentityId();
+		return applyAdd("SPEED", json(Map.of("speedName", name, "speedType", type))).assetIdentityId();
 	}
 
 	protected Long seedChargeType(String name) {
-		return applyAdd(AssetType.CHARGE_TYPE, json(Map.of("chargeTypeName", name))).assetIdentityId();
+		return applyAdd("CHARGE_TYPE", json(Map.of("chargeTypeName", name))).assetIdentityId();
 	}
 
 	protected Long seedCrossConnectType(String name) {
-		return applyAdd(AssetType.CROSS_CONNECT_TYPE, json(Map.of("crossConnectTypeName", name)))
+		return applyAdd("CROSS_CONNECT_TYPE", json(Map.of("crossConnectTypeName", name)))
 				.assetIdentityId();
 	}
 
 	protected Long seedMarketDataFeedType(String name) {
-		return applyAdd(AssetType.MARKET_DATA_FEED_TYPE, json(Map.of("marketDataFeedTypeName", name)))
+		return applyAdd("MARKET_DATA_FEED_TYPE", json(Map.of("marketDataFeedTypeName", name)))
 				.assetIdentityId();
 	}
 
@@ -388,12 +394,12 @@ public abstract class ChangeTestSupport {
 	}
 
 	protected Long seedCrossConnect(String circuitId, XcDeps deps) {
-		return applyAdd(AssetType.CROSS_CONNECT, xcPayload(circuitId, deps)).assetIdentityId();
+		return applyAdd("CROSS_CONNECT", xcPayload(circuitId, deps)).assetIdentityId();
 	}
 
 	protected Long seedMarketDataFeed(String name, Long crossConnectId, Long feedTypeId, XcDeps deps) {
 		return applyAdd(
-				AssetType.MARKET_DATA_FEED,
+				"MARKET_DATA_FEED",
 				json(fields(
 						"marketDataFeedName", name,
 						"crossConnectId", crossConnectId,
@@ -405,14 +411,14 @@ public abstract class ChangeTestSupport {
 
 	protected Long seedDocument(String name, Long crossConnectId) {
 		return applyAdd(
-				AssetType.DOCUMENT,
+				"DOCUMENT",
 				json(Map.of("documentName", name, "crossConnectId", crossConnectId)))
 				.assetIdentityId();
 	}
 
 	protected Long seedCable(String name, Long portAId, Long portBId) {
 		return applyAdd(
-				AssetType.CABLE,
+				"CABLE",
 				json(Map.of("cableName", name, "portAId", portAId, "portBId", portBId)))
 				.assetIdentityId();
 	}
